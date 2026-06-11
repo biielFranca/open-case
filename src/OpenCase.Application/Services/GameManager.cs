@@ -7,9 +7,14 @@ namespace OpenCase.Application.Services;
 /// <summary>
 /// Mantém as partidas ativas em memória e orquestra a criação a partir de uma sala.
 /// </summary>
-public class GameManager(BoardService boardService, GameSetupService gameSetupService, TurnService turnService)
+public class GameManager(
+    BoardService boardService,
+    GameSetupService gameSetupService,
+    TurnService turnService,
+    GameEventLogger? eventLogger = null)
 {
     private readonly ConcurrentDictionary<Guid, Game> _gamesByRoom = new();
+    private readonly GameEventLogger _eventLogger = eventLogger ?? new GameEventLogger();
 
     public Game StartGame(Room room)
     {
@@ -32,6 +37,10 @@ public class GameManager(BoardService boardService, GameSetupService gameSetupSe
             // Peões começam espalhados no corredor inferior (y=19 é linha de corredor).
             game.PawnPositions[playerIds[i]] = new BoardPosition(2 + i * 2, Board.Height - 1);
         }
+
+        _eventLogger.Log(game, GameEventTypes.GameStarted, new { room.Id, Players = playerIds.Count });
+        _eventLogger.Log(game, GameEventTypes.SolutionCreated);
+        _eventLogger.Log(game, GameEventTypes.CardsDealt, new { Cards = deck.Count - 3 });
 
         _gamesByRoom[room.Id] = game;
         return game;
