@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OpenCase.Application/OpenCase.Application.csproj" />
+    <Project Path="src/OpenCase.Domain/OpenCase.Domain.csproj" />
+    <Project Path="src/OpenCase.Infrastructure/OpenCase.Infrastructure.csproj" />
+    <Project Path="src/OpenCase.Shared/OpenCase.Shared.csproj" />
+    <Project Path="src/OpenCase.Web/OpenCase.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OpenCase.Application.Tests/OpenCase.Application.Tests.csproj" />
+    <Project Path="tests/OpenCase.Domain.Tests/OpenCase.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
