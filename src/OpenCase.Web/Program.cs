@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSignalR();
+builder.Services.AddHealthChecks();
 
 // DATABASE_URL (deploy) tem prioridade sobre appsettings (desenvolvimento).
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
@@ -52,9 +53,13 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseAntiforgery();
 
 app.MapHub<OpenCase.Web.Hubs.GameHub>("/gamehub");
+app.MapHealthChecks("/health");
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+// Exposto para os testes de integração (WebApplicationFactory).
+public partial class Program;
