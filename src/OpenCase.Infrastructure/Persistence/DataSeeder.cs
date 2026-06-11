@@ -11,17 +11,8 @@ namespace OpenCase.Infrastructure.Persistence;
 /// </summary>
 public static class DataSeeder
 {
-    private static readonly string[] SuspectNames =
-    [
-        "Coronel Mostarda", "Dona Violeta", "Professor Black", "Senhorita Rosa",
-        "Doutor Marinho", "Madame Café", "Capitão Cinza", "Jovem Verde",
-    ];
-
-    private static readonly string[] WeaponNames =
-    [
-        "Castiçal", "Adaga", "Corda", "Revólver",
-        "Cano de Chumbo", "Chave Inglesa", "Veneno", "Abridor de Cartas",
-    ];
+    private static readonly string[] SuspectNames = CardCatalog.SuspectNames;
+    private static readonly string[] WeaponNames = CardCatalog.WeaponNames;
 
     public static async Task SeedAsync(OpenCaseDbContext context, CancellationToken cancellationToken = default)
     {

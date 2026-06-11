@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\OpenCase.Domain\OpenCase.Domain.csproj" />
     <ProjectReference Include="..\..\src\OpenCase.Shared\OpenCase.Shared.csproj" />
     <ProjectReference Include="..\..\src\OpenCase.Infrastructure\OpenCase.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\OpenCase.Web\OpenCase.Web.csproj" />
   </ItemGroup>
 
 </Project>
