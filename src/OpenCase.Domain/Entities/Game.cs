@@ -13,6 +13,9 @@ public class Game
     public TurnState TurnState { get; set; } = new();
     public Board Board { get; set; } = new();
     public Dictionary<Guid, BoardPosition> PawnPositions { get; set; } = [];
+
+    // Qual carta de suspeito representa cada jogador no tabuleiro.
+    public Dictionary<Guid, Guid> PlayerSuspects { get; set; } = [];
     public Suggestion? ActiveSuggestion { get; set; }
     public RefutationState? ActiveRefutation { get; set; }
 
