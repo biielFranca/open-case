@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY OpenCase.sln .
+COPY OpenCase.slnx .
 COPY src/ src/
 COPY tests/ tests/
 
