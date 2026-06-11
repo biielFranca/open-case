@@ -1,0 +1,18 @@
+@using OpenCase.Shared.Dtos
+
+<div class="top-slot @(Player is null ? "top-slot-empty" : "")">
+    @if (Player is not null)
+    {
+        <span class="top-slot-dot" style="background:@(PawnColor ?? "#444")"></span>
+        <span class="top-slot-name">@Player.Name</span>
+    }
+    else
+    {
+        <span class="top-slot-name">—</span>
+    }
+</div>
+
+@code {
+    [Parameter] public PlayerDto? Player { get; set; }
+    [Parameter] public string? PawnColor { get; set; }
+}

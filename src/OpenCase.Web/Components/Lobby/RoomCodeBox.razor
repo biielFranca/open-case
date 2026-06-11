@@ -1,0 +1,21 @@
+@inject IJSRuntime Js
+
+<div class="room-code-box">
+    <span class="room-code-label">Código da sala</span>
+    <span class="room-code">@Code</span>
+    <button type="button" class="copy-button" @onclick="CopyAsync">
+        @(_copied ? "Copiado!" : "Copiar")
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Code { get; set; } = string.Empty;
+
+    private bool _copied;
+
+    private async Task CopyAsync()
+    {
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", Code);
+        _copied = true;
+    }
+}

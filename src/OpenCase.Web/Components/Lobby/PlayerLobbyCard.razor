@@ -1,0 +1,25 @@
+@using OpenCase.Shared.Dtos
+
+<div class="lobby-card player-card">
+    <div class="pawn-chip" style="background:@(PawnColor ?? "#444")"></div>
+    <div class="player-name">
+        @Player.Name
+        @if (Player.IsHost)
+        {
+            <span class="host-badge" title="Host">★</span>
+        }
+    </div>
+    @if (Player.IsReady)
+    {
+        <span class="ready-badge">Pronto</span>
+    }
+    else
+    {
+        <span class="waiting-badge">Escolhendo...</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PlayerDto Player { get; set; } = default!;
+    [Parameter] public string? PawnColor { get; set; }
+}

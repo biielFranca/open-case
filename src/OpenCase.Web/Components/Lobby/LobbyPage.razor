@@ -1,0 +1,161 @@
+@page "/lobby"
+@using Microsoft.AspNetCore.SignalR.Client
+@using OpenCase.Application.Services
+@using OpenCase.Shared.Dtos
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Open Case — Lobby</PageTitle>
+
+<div class="lobby-page">
+    <header class="lobby-header">
+        <div class="logo">OPEN <span class="logo-accent">CASE</span></div>
+        @if (_room is not null)
+        {
+            <div class="top-slots">
+                @for (var i = 0; i < 8; i++)
+                {
+                    var player = i < _room.Players.Count ? _room.Players[i] : null;
+                    <PlayerTopSlot Player="player" PawnColor="ColorOf(player)" />
+                }
+            </div>
+        }
+    </header>
+
+    @if (_room is null)
+    {
+        <section class="lobby-entry">
+            <h2>Abra o caso.</h2>
+            <input class="text-input" placeholder="Seu nome" @bind="_playerName" maxlength="30" />
+            <div class="entry-actions">
+                <button class="primary-button" @onclick="CreateRoomAsync" disabled="@(!CanInteract)">Criar sala</button>
+                <div class="join-group">
+                    <input class="text-input" placeholder="Código da sala" @bind="_joinCode" maxlength="6" />
+                    <button class="secondary-button" @onclick="JoinRoomAsync" disabled="@(!CanInteract)">Entrar</button>
+                </div>
+            </div>
+            @if (_error is not null)
+            {
+                <p class="error-text">@_error</p>
+            }
+        </section>
+    }
+    else
+    {
+        <div class="lobby-layout">
+            <main class="lobby-main">
+                <RoomCodeBox Code="@_room.Code" />
+                <div class="lobby-cards">
+                    @foreach (var player in _room.Players)
+                    {
+                        <PlayerLobbyCard Player="player" PawnColor="ColorOf(player)" />
+                    }
+                    @for (var i = _room.Players.Count; i < 8; i++)
+                    {
+                        <EmptyLobbyCard />
+                    }
+                </div>
+                <MapPreviewCard />
+            </main>
+            <RoomSettingsPanel AvailablePawns="_pawns"
+                               TakenPawnIds="TakenPawns"
+                               SelectedPawnId="Me?.PawnId"
+                               IsReady="Me?.IsReady ?? false"
+                               IsHost="Me?.IsHost ?? false"
+                               CanStart="CanStart"
+                               OnchoosePawn="ChoosePawnAsync"
+                               OnSetReady="SetReadyAsync"
+                               OnStartGame="StartGameAsync" />
+        </div>
+        @if (_error is not null)
+        {
+            <p class="error-text">@_error</p>
+        }
+    }
+</div>
+
+@code {
+    private HubConnection? _hub;
+    private RoomDto? _room;
+    private string _playerName = string.Empty;
+    private string _joinCode = string.Empty;
+    private string? _error;
+
+    private readonly List<PawnDto> _pawns =
+        [.. RoomService.AvailablePawns.Select(p => new PawnDto(p.Id, p.Name, p.Color))];
+
+    private bool CanInteract => !string.IsNullOrWhiteSpace(_playerName);
+
+    private PlayerDto? Me => _room?.Players.FirstOrDefault(p => p.Name == _playerName);
+
+    private HashSet<Guid> TakenPawns =>
+        _room is null ? [] : [.. _room.Players.Where(p => p.PawnId is not null).Select(p => p.PawnId!.Value)];
+
+    private bool CanStart =>
+        _room is not null
+        && _room.Players.Count >= 3
+        && _room.Players.All(p => p.PawnId is not null && p.IsReady);
+
+    private string? ColorOf(PlayerDto? player) =>
+        player?.PawnId is null ? null : _pawns.FirstOrDefault(p => p.Id == player.PawnId)?.Color;
+
+    private async Task EnsureConnectedAsync()
+    {
+        if (_hub is not null)
+        {
+            return;
+        }
+
+        _hub = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<RoomDto>("RoomUpdated", room =>
+        {
+            _room = room;
+            _error = null;
+            _ = InvokeAsync(StateHasChanged);
+        });
+
+        _hub.On<string>("ErrorMessage", message =>
+        {
+            _error = message;
+            _ = InvokeAsync(StateHasChanged);
+        });
+
+        _hub.On<object, object>("GameStarted", (_, _) =>
+        {
+            _ = InvokeAsync(() => Navigation.NavigateTo("/game"));
+        });
+
+        await _hub.StartAsync();
+    }
+
+    private async Task CreateRoomAsync()
+    {
+        await EnsureConnectedAsync();
+        await _hub!.InvokeAsync("CreateRoom", _playerName.Trim());
+    }
+
+    private async Task JoinRoomAsync()
+    {
+        await EnsureConnectedAsync();
+        await _hub!.InvokeAsync("JoinRoom", _joinCode.Trim().ToUpperInvariant(), _playerName.Trim());
+    }
+
+    private Task ChoosePawnAsync(Guid pawnId) => _hub!.InvokeAsync("ChoosePawn", pawnId);
+
+    private Task SetReadyAsync(bool isReady) => _hub!.InvokeAsync("SetReady", isReady);
+
+    private Task StartGameAsync() => _hub!.InvokeAsync("StartGame");
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub is not null)
+        {
+            await _hub.DisposeAsync();
+        }
+    }
+}

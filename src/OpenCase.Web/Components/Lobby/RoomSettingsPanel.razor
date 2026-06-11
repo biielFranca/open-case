@@ -1,0 +1,49 @@
+@using OpenCase.Shared.Dtos
+
+<aside class="room-settings-panel">
+    <h3 class="panel-title">Sua investigação</h3>
+
+    <div class="pawn-grid">
+        @foreach (var pawn in AvailablePawns)
+        {
+            var isTaken = TakenPawnIds.Contains(pawn.Id) && pawn.Id != SelectedPawnId;
+            <button type="button"
+                    class="pawn-option @(pawn.Id == SelectedPawnId ? "selected" : "")"
+                    style="--pawn-color:@pawn.Color"
+                    data-pawn-id="@pawn.Id"
+                    disabled="@isTaken"
+                    @onclick="() => OnchoosePawn.InvokeAsync(pawn.Id)">
+                @pawn.Name
+            </button>
+        }
+    </div>
+
+    <label class="ready-toggle">
+        <input type="checkbox" checked="@IsReady" @onchange="e => OnSetReady.InvokeAsync((bool)e.Value!)" />
+        Estou pronto
+    </label>
+
+    <button type="button"
+            class="start-button"
+            disabled="@(!(IsHost && CanStart))"
+            @onclick="() => OnStartGame.InvokeAsync()">
+        Iniciar partida
+    </button>
+
+    @if (!IsHost)
+    {
+        <p class="panel-hint">Apenas o host pode iniciar.</p>
+    }
+</aside>
+
+@code {
+    [Parameter] public List<PawnDto> AvailablePawns { get; set; } = [];
+    [Parameter] public HashSet<Guid> TakenPawnIds { get; set; } = [];
+    [Parameter] public Guid? SelectedPawnId { get; set; }
+    [Parameter] public bool IsReady { get; set; }
+    [Parameter] public bool IsHost { get; set; }
+    [Parameter] public bool CanStart { get; set; }
+    [Parameter] public EventCallback<Guid> OnchoosePawn { get; set; }
+    [Parameter] public EventCallback<bool> OnSetReady { get; set; }
+    [Parameter] public EventCallback OnStartGame { get; set; }
+}
