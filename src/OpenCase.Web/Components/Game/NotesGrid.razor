@@ -1,0 +1,34 @@
+@using OpenCase.Shared.Dtos
+
+<div class="notes-grid">
+    @RenderSection("Suspeitos", Suspects)
+    @RenderSection("Locais", Locations)
+    @RenderSection("Armas", Weapons)
+</div>
+
+@code {
+    [Parameter] public List<CardDto> Suspects { get; set; } = [];
+    [Parameter] public List<CardDto> Locations { get; set; } = [];
+    [Parameter] public List<CardDto> Weapons { get; set; } = [];
+    [Parameter] public Dictionary<Guid, bool> Marked { get; set; } = [];
+    [Parameter] public EventCallback<Guid> OnToggle { get; set; }
+
+    private bool IsMarked(Guid cardId) => Marked.GetValueOrDefault(cardId);
+
+    private RenderFragment RenderSection(string title, List<CardDto> cards) => __builder =>
+    {
+        <section class="notes-section">
+            <h4 class="notes-section-title">@title</h4>
+            @foreach (var card in cards)
+            {
+                <button type="button"
+                        class="notes-row @(IsMarked(card.Id) ? "marked" : "")"
+                        data-card-id="@card.Id"
+                        @onclick="() => OnToggle.InvokeAsync(card.Id)">
+                    <span class="notes-card-name">@card.Name</span>
+                    <span class="notes-mark">@(IsMarked(card.Id) ? "X" : "")</span>
+                </button>
+            }
+        </section>
+    };
+}
