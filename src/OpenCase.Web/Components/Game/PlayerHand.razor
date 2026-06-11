@@ -1,0 +1,28 @@
+@using OpenCase.Shared.Dtos
+
+<div class="player-hand">
+    @foreach (var card in Cards)
+    {
+        <button type="button"
+                class="hand-card card-@card.Type.ToLowerInvariant() @(card.Id == SelectedCardId ? "selected" : "")"
+                data-card-id="@card.Id"
+                @onclick="() => OnCardClick.InvokeAsync(card.Id)">
+            <span class="hand-card-type">@TranslateType(card.Type)</span>
+            <span class="hand-card-name">@card.Name</span>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public List<CardDto> Cards { get; set; } = [];
+    [Parameter] public Guid? SelectedCardId { get; set; }
+    [Parameter] public EventCallback<Guid> OnCardClick { get; set; }
+
+    private static string TranslateType(string type) => type switch
+    {
+        "Suspect" => "Suspeito",
+        "Location" => "Local",
+        "Weapon" => "Arma",
+        _ => type,
+    };
+}

@@ -1,0 +1,26 @@
+@using OpenCase.Shared.Dtos
+
+<div class="modal-backdrop">
+    <div class="modal accusation-modal">
+        <h3>Acusação final</h3>
+        <p>Ninguém refutou seu palpite. Você pode encerrar o caso com esta acusação:</p>
+        <ul class="accusation-summary">
+            <li><strong>Suspeito:</strong> @SuspectName</li>
+            <li><strong>Local:</strong> @LocationName</li>
+            <li><strong>Arma:</strong> @WeaponName</li>
+        </ul>
+        <p class="panel-hint">Se errar, você perde o próximo turno e a solução continua secreta.</p>
+        <div class="modal-actions">
+            <button type="button" class="secondary-button" @onclick="() => OnCancel.InvokeAsync()">Ainda não</button>
+            <button type="button" class="confirm-button primary-button" @onclick="() => OnConfirm.InvokeAsync()">Acusar!</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string SuspectName { get; set; } = string.Empty;
+    [Parameter] public string LocationName { get; set; } = string.Empty;
+    [Parameter] public string WeaponName { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

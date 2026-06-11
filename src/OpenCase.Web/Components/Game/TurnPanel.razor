@@ -1,0 +1,37 @@
+@using OpenCase.Shared.Dtos
+
+<div class="turn-panel">
+    @if (Turn is not null)
+    {
+        var currentName = PlayerNames.GetValueOrDefault(Turn.CurrentPlayerId, "?");
+        <div class="turn-current">
+            @if (Turn.CurrentPlayerId == MyPlayerId)
+            {
+                <strong>É a sua vez, @currentName!</strong>
+            }
+            else
+            {
+                <span>Vez de <strong>@currentName</strong></span>
+            }
+        </div>
+        <div class="turn-phase">Fase: @TranslatePhase(Turn.Phase)</div>
+        <div class="turn-number">Turno @Turn.TurnNumber</div>
+    }
+</div>
+
+@code {
+    [Parameter] public TurnDto? Turn { get; set; }
+    [Parameter] public Dictionary<Guid, string> PlayerNames { get; set; } = [];
+    [Parameter] public Guid MyPlayerId { get; set; }
+
+    private static string TranslatePhase(string phase) => phase switch
+    {
+        "RollDice" => "Rolar o dado",
+        "Move" => "Mover",
+        "Suggestion" => "Palpite",
+        "Refutation" => "Refutação",
+        "FinalAccusation" => "Acusação final",
+        "EndOfTurn" => "Fim do turno",
+        _ => phase,
+    };
+}

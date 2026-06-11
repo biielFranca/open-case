@@ -31,6 +31,7 @@ builder.Services.AddSingleton<HintService>();
 builder.Services.AddSingleton<SecretPassageService>();
 builder.Services.AddSingleton<GameEventLogger>();
 builder.Services.AddSingleton<NotesService>();
+builder.Services.AddScoped<OpenCase.Web.Services.GameClientService>();
 builder.Services.AddSingleton<GameManager>();
 
 var app = builder.Build();

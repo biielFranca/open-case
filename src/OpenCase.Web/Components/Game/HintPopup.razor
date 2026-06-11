@@ -1,0 +1,23 @@
+@using OpenCase.Shared.Dtos
+
+@if (Hint is not null)
+{
+    <div class="hint-popup hint-@Hint.Type.ToLowerInvariant()">
+        <span class="hint-type">@TranslateType(Hint.Type)</span>
+        <p class="hint-text">@Hint.Text</p>
+        <button type="button" class="hint-close" @onclick="() => OnClose.InvokeAsync()">×</button>
+    </div>
+}
+
+@code {
+    [Parameter] public PublicHintDto? Hint { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private static string TranslateType(string type) => type switch
+    {
+        "Private" => "Dica privada",
+        "Public" => "Dica pública",
+        "Noise" => "Rumor",
+        _ => type,
+    };
+}

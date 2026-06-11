@@ -146,3 +146,60 @@ h1:focus {
 .notes-row { display: flex; justify-content: space-between; background: var(--oc-bg-card); border: 1px solid #2a3a30; color: var(--oc-text); border-radius: 0.4rem; padding: 0.45rem 0.8rem; cursor: pointer; font-size: 0.9rem; }
 .notes-row.marked { color: var(--oc-text-dim); text-decoration: line-through; }
 .notes-mark { color: var(--oc-danger); font-weight: 800; }
+
+/* ─── Tela de partida ─── */
+.game-tabs { display: none; gap: 0.4rem; margin-bottom: 1rem; }
+.game-tab { background: var(--oc-bg-card); border: 1px solid #2a3a30; color: var(--oc-text); border-radius: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; }
+.game-tab.active { background: var(--oc-green); color: #fff; font-weight: 700; }
+
+.game-layout { display: grid; grid-template-columns: minmax(0, 2fr) 16rem 16rem; grid-template-areas: "board side hand" "board side notes"; gap: 1.2rem; }
+.game-board-area { grid-area: board; }
+.game-side { grid-area: side; display: flex; flex-direction: column; gap: 0.8rem; }
+.game-hand-area { grid-area: hand; }
+.game-notes-area { grid-area: notes; }
+
+@media (max-width: 1100px) {
+    .game-tabs { display: flex; }
+    .game-layout { display: block; }
+    .mobile-hidden { display: none; }
+}
+
+.board-view { display: grid; grid-template-columns: repeat(var(--board-cols, 20), 1.6rem); gap: 1px; background: #0a0f0c; border: 2px solid var(--oc-gold); border-radius: 0.4rem; width: fit-content; padding: 2px; }
+.board-cell { width: 1.6rem; height: 1.6rem; position: relative; cursor: pointer; }
+.cell-path { background: #243029; }
+.cell-wall { background: #11181410; background-color: #131c16; cursor: default; }
+.cell-entrance { background: var(--oc-gold); opacity: 0.75; }
+.cell-location { background: #1c2a21; }
+.cell-secretpassage { background: #3a2d4f; }
+.board-cell.selected { outline: 2px solid var(--oc-green-soft); outline-offset: -2px; }
+.board-pawn { position: absolute; inset: 15%; border-radius: 50%; border: 1.5px solid #fff3; }
+
+.path-actions { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem; }
+
+.turn-panel, .dice-panel { background: var(--oc-bg-panel); border: 1px solid #2a3a30; border-radius: 0.8rem; padding: 1rem; }
+.turn-current { font-size: 1.05rem; }
+.turn-phase, .turn-number { color: var(--oc-text-dim); font-size: 0.85rem; }
+.dice-panel { display: flex; align-items: center; gap: 1rem; }
+.dice-value { font-size: 2rem; font-weight: 800; color: var(--oc-gold-soft); min-width: 2.5rem; text-align: center; }
+
+.player-hand { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.hand-card { background: var(--oc-bg-card); border: 1px solid var(--oc-gold); color: var(--oc-text); border-radius: 0.6rem; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.2rem; cursor: pointer; min-width: 7rem; text-align: left; }
+.hand-card-type { font-size: 0.7rem; color: var(--oc-text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.hand-card-name { font-weight: 700; font-size: 0.9rem; }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { background: var(--oc-bg-panel); border: 1px solid var(--oc-gold); border-radius: 1rem; padding: 1.5rem; max-width: 34rem; width: 92vw; max-height: 85vh; overflow: auto; color: var(--oc-text); }
+.modal-card-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }
+.modal-card { background: var(--oc-bg-card); border: 1px solid #31453a; color: var(--oc-text); border-radius: 0.5rem; padding: 0.5rem 0.9rem; cursor: pointer; }
+.modal-card.selected { border-color: var(--oc-green-soft); background: var(--oc-green); color: #fff; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; }
+.accusation-summary { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+
+.hint-popup { position: fixed; right: 1.5rem; bottom: 1.5rem; background: var(--oc-bg-panel); border-left: 4px solid var(--oc-gold); border-radius: 0.6rem; padding: 1rem 2.4rem 1rem 1rem; max-width: 20rem; box-shadow: 0 6px 24px rgba(0,0,0,0.5); z-index: 60; }
+.hint-private { border-left-color: var(--oc-green-soft); }
+.hint-noise { border-left-color: var(--oc-text-dim); }
+.hint-type { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--oc-text-dim); }
+.hint-text { margin: 0.3rem 0 0; }
+.hint-close { position: absolute; top: 0.4rem; right: 0.6rem; background: none; border: none; color: var(--oc-text-dim); font-size: 1.1rem; cursor: pointer; }
+
+.private-card-banner { background: var(--oc-bg-card); border: 1px solid var(--oc-green-soft); border-radius: 0.6rem; padding: 0.8rem; position: relative; }

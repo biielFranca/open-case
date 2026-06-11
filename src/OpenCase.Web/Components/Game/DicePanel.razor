@@ -1,0 +1,13 @@
+<div class="dice-panel">
+    <div class="dice-value">@(DiceValue?.ToString() ?? "—")</div>
+    <button type="button" class="roll-button primary-button" disabled="@(!CanRoll)"
+            @onclick="() => OnRoll.InvokeAsync()">
+        Rolar dado
+    </button>
+</div>
+
+@code {
+    [Parameter] public int? DiceValue { get; set; }
+    [Parameter] public bool CanRoll { get; set; }
+    [Parameter] public EventCallback OnRoll { get; set; }
+}

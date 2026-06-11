@@ -1,0 +1,251 @@
+@page "/game"
+@using OpenCase.Shared.Dtos
+@using OpenCase.Web.Services
+@rendermode InteractiveServer
+@inject GameClientService Client
+@implements IDisposable
+
+<PageTitle>Open Case — Partida</PageTitle>
+
+<div class="game-page">
+    @if (Client.GameState is null || Client.Board is null)
+    {
+        <div class="lobby-entry">
+            <div class="logo">OPEN <span class="logo-accent">CASE</span></div>
+            <p>Nenhuma partida ativa nesta sessão.</p>
+            <a class="primary-button" href="/lobby">Voltar ao lobby</a>
+        </div>
+    }
+    else
+    {
+        var state = Client.GameState;
+        var isMyTurn = state.Turn.CurrentPlayerId == Client.MyPlayerId;
+
+        <nav class="game-tabs">
+            @foreach (var tab in Tabs)
+            {
+                <button type="button" class="game-tab @(tab == _activeTab ? "active" : "")"
+                        @onclick="() => _activeTab = tab">@tab</button>
+            }
+        </nav>
+
+        <div class="game-layout">
+            <section class="game-board-area @(IsVisible("Tabuleiro") ? "" : "mobile-hidden")">
+                <BoardView Board="Client.Board"
+                           PawnPositions="state.PawnPositions"
+                           PawnColors="PawnColors"
+                           SelectedPath="_selectedPath"
+                           OnCellClick="HandleCellClick" />
+                @if (_selectedPath.Count > 0)
+                {
+                    <div class="path-actions">
+                        <span>@_selectedPath.Count / @(state.Turn.DiceValue ?? 0) passos</span>
+                        <button class="primary-button" @onclick="ConfirmMoveAsync">Mover</button>
+                        <button class="secondary-button" @onclick="() => _selectedPath.Clear()">Limpar</button>
+                    </div>
+                }
+            </section>
+
+            <aside class="game-side @(IsVisible("Ações") ? "" : "mobile-hidden")">
+                <TurnPanel Turn="state.Turn" PlayerNames="PlayerNames" MyPlayerId="Client.MyPlayerId" />
+                <DicePanel DiceValue="state.Turn.DiceValue"
+                           CanRoll="@(isMyTurn && state.Turn.Phase == "RollDice")"
+                           OnRoll="Client.RollTurnDiceAsync" />
+                @if (state.Turn.TurnOrder.Count == 0)
+                {
+                    <button class="primary-button" @onclick="Client.RollInitialDiceAsync">Sortear ordem inicial</button>
+                }
+                @if (isMyTurn && state.Turn.Phase == "Suggestion")
+                {
+                    <button class="primary-button" @onclick="() => _showSuggestionModal = true">Dar palpite</button>
+                    <button class="secondary-button" @onclick="Client.UseSecretPassageAsync">Passagem secreta</button>
+                }
+                @if (isMyTurn && state.Turn.Phase == "FinalAccusation")
+                {
+                    <button class="primary-button" @onclick="() => _showAccusationModal = true">Acusação final</button>
+                }
+                @if (Client.LastError is not null)
+                {
+                    <p class="error-text" @onclick="Client.ClearError">@Client.LastError</p>
+                }
+                @if (Client.LastPrivateCard is not null)
+                {
+                    <div class="private-card-banner">
+                        <strong>@PlayerNames.GetValueOrDefault(Client.LastPrivateCard.ShownByPlayerId, "?")</strong>
+                        mostrou: <strong>@Client.LastPrivateCard.Card.Name</strong>
+                        <button class="hint-close" @onclick="Client.ClearPrivateCard">×</button>
+                    </div>
+                }
+            </aside>
+
+            <section class="game-hand-area @(IsVisible("Cartas") ? "" : "mobile-hidden")">
+                <h4 class="panel-title">Suas cartas</h4>
+                <PlayerHand Cards="MyCards" />
+            </section>
+
+            <section class="game-notes-area @(IsVisible("Notas") ? "" : "mobile-hidden")">
+                <h4 class="panel-title">Bloco de notas</h4>
+                <NotesGrid Suspects="SuspectCards"
+                           Locations="LocationCards"
+                           Weapons="WeaponCards"
+                           Marked="_notes"
+                           OnToggle="ToggleNote" />
+            </section>
+        </div>
+
+        @if (_showSuggestionModal)
+        {
+            <SuggestionModal Suspects="SuspectCards"
+                             Weapons="WeaponCards"
+                             LocationName="@CurrentLocationName"
+                             OnConfirm="ConfirmSuggestionAsync"
+                             OnCancel="() => _showSuggestionModal = false" />
+        }
+
+        @if (NeedsMyRefutation)
+        {
+            <RefutationModal AvailableCards="MyRefutableCards"
+                             OnShowCard="ShowRefutationCardAsync"
+                             OnPass="Client.PassRefutationAsync" />
+        }
+
+        @if (_showAccusationModal && state.ActiveSuggestion is not null)
+        {
+            <FinalAccusationModal SuspectName="@CardName(state.ActiveSuggestion.SuspectCardId)"
+                                  LocationName="@CardName(state.ActiveSuggestion.LocationCardId)"
+                                  WeaponName="@CardName(state.ActiveSuggestion.WeaponCardId)"
+                                  OnConfirm="ConfirmAccusationAsync"
+                                  OnCancel="() => _showAccusationModal = false" />
+        }
+
+        <HintPopup Hint="Client.LastHint" OnClose="Client.ClearHint" />
+    }
+</div>
+
+@code {
+    private static readonly string[] Tabs = ["Tabuleiro", "Cartas", "Notas", "Ações"];
+    private string _activeTab = "Tabuleiro";
+    private readonly List<PositionDto> _selectedPath = [];
+    private readonly Dictionary<Guid, bool> _notes = [];
+    private bool _showSuggestionModal;
+    private bool _showAccusationModal;
+
+    // Catálogo de cartas conhecido pelo cliente (mão + palpites públicos).
+    private List<CardDto> _knownCards = [];
+
+    protected override void OnInitialized()
+    {
+        Client.OnChange += HandleChange;
+    }
+
+    private void HandleChange()
+    {
+        if (Client.Hand is not null)
+        {
+            foreach (var card in Client.Hand.Cards.Where(c => _knownCards.All(k => k.Id != c.Id)))
+            {
+                _knownCards.Add(card);
+            }
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private Dictionary<Guid, string> PlayerNames =>
+        Client.Room?.Players.ToDictionary(p => p.Id, p => p.Name) ?? [];
+
+    private Dictionary<Guid, string> PawnColors =>
+        Client.Room?.Players
+            .Where(p => p.PawnId is not null)
+            .ToDictionary(
+                p => p.Id,
+                p => OpenCase.Application.Services.RoomService.AvailablePawns
+                    .FirstOrDefault(pawn => pawn.Id == p.PawnId)?.Color ?? "#888")
+        ?? [];
+
+    private List<CardDto> MyCards => Client.Hand?.Cards ?? [];
+
+    private List<CardDto> CardsOf(string type) => [.. _knownCards.Where(c => c.Type == type)];
+
+    private List<CardDto> SuspectCards => CardsOf("Suspect");
+    private List<CardDto> LocationCards => CardsOf("Location");
+    private List<CardDto> WeaponCards => CardsOf("Weapon");
+
+    private string CurrentLocationName
+    {
+        get
+        {
+            var position = Client.GameState?.PawnPositions.GetValueOrDefault(Client.MyPlayerId);
+            if (position is null || Client.Board is null)
+            {
+                return "?";
+            }
+
+            var cell = Client.Board.Cells.FirstOrDefault(c => c.X == position.X && c.Y == position.Y);
+            return Client.Board.Locations.FirstOrDefault(l => l.Id == cell?.LocationId)?.Name ?? "?";
+        }
+    }
+
+    private bool NeedsMyRefutation =>
+        Client.GameState?.ActiveRefutation is { IsResolved: false } refutation
+        && refutation.CurrentRefutingPlayerId == Client.MyPlayerId;
+
+    private List<CardDto> MyRefutableCards
+    {
+        get
+        {
+            var suggestion = Client.GameState?.ActiveSuggestion;
+            if (suggestion is null)
+            {
+                return [];
+            }
+
+            Guid[] cited = [suggestion.SuspectCardId, suggestion.LocationCardId, suggestion.WeaponCardId];
+            return [.. MyCards.Where(c => cited.Contains(c.Id))];
+        }
+    }
+
+    private string CardName(Guid cardId) =>
+        _knownCards.FirstOrDefault(c => c.Id == cardId)?.Name ?? "?";
+
+    private bool IsVisible(string tab) => _activeTab == tab;
+
+    private void HandleCellClick(PositionDto position)
+    {
+        if (Client.GameState?.Turn.Phase != "Move")
+        {
+            return;
+        }
+
+        _selectedPath.Add(position);
+    }
+
+    private async Task ConfirmMoveAsync()
+    {
+        await Client.MovePawnAsync([.. _selectedPath]);
+        _selectedPath.Clear();
+    }
+
+    private async Task ConfirmSuggestionAsync((Guid SuspectId, Guid WeaponId) pick)
+    {
+        _showSuggestionModal = false;
+        await Client.MakeSuggestionAsync(pick.SuspectId, pick.WeaponId);
+    }
+
+    private async Task ShowRefutationCardAsync(Guid cardId) =>
+        await Client.ShowRefutationCardAsync(cardId);
+
+    private async Task ConfirmAccusationAsync()
+    {
+        _showAccusationModal = false;
+        await Client.MakeFinalAccusationAsync();
+    }
+
+    private void ToggleNote(Guid cardId) =>
+        _notes[cardId] = !_notes.GetValueOrDefault(cardId);
+
+    public void Dispose()
+    {
+        Client.OnChange -= HandleChange;
+    }
+}

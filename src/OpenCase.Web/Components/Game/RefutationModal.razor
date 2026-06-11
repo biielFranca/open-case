@@ -1,0 +1,29 @@
+@using OpenCase.Shared.Dtos
+
+<div class="modal-backdrop">
+    <div class="modal refutation-modal">
+        <h3>Refutação</h3>
+        @if (AvailableCards.Count > 0)
+        {
+            <p>Você tem carta compatível e precisa mostrar uma ao acusador:</p>
+            <div class="modal-card-grid">
+                @foreach (var card in AvailableCards)
+                {
+                    <button type="button" data-card-id="@card.Id" class="modal-card"
+                            @onclick="() => OnShowCard.InvokeAsync(card.Id)">@card.Name</button>
+                }
+            </div>
+        }
+        else
+        {
+            <p>Você não tem nenhuma das cartas citadas.</p>
+            <button type="button" class="primary-button" @onclick="() => OnPass.InvokeAsync()">Passar</button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<CardDto> AvailableCards { get; set; } = [];
+    [Parameter] public EventCallback<Guid> OnShowCard { get; set; }
+    [Parameter] public EventCallback OnPass { get; set; }
+}

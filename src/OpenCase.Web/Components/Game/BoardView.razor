@@ -1,0 +1,43 @@
+@using OpenCase.Shared.Dtos
+
+<div class="board-view" style="--board-cols:@(Board?.Width ?? 20)">
+    @if (Board is not null)
+    {
+        @for (var y = 0; y < Board.Height; y++)
+        {
+            var row = y;
+            @for (var x = 0; x < Board.Width; x++)
+            {
+                var col = x;
+                var cell = _cellLookup[(col, row)];
+                var isSelected = SelectedPath.Any(p => p.X == col && p.Y == row);
+                <div class="board-cell cell-@cell.Type.ToLowerInvariant() @(isSelected ? "selected" : "")"
+                     data-cell="@($"{col}-{row}")"
+                     @onclick="() => HandleClick(cell)">
+                    @foreach (var pawn in PawnPositions.Where(p => p.Value.X == col && p.Value.Y == row))
+                    {
+                        <span class="board-pawn" style="background:@PawnColors.GetValueOrDefault(pawn.Key, "#888")"></span>
+                    }
+                </div>
+            }
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public BoardDto? Board { get; set; }
+    [Parameter] public Dictionary<Guid, PositionDto> PawnPositions { get; set; } = [];
+    [Parameter] public Dictionary<Guid, string> PawnColors { get; set; } = [];
+    [Parameter] public List<PositionDto> SelectedPath { get; set; } = [];
+    [Parameter] public EventCallback<PositionDto> OnCellClick { get; set; }
+
+    private Dictionary<(int X, int Y), BoardCellDto> _cellLookup = [];
+
+    protected override void OnParametersSet()
+    {
+        _cellLookup = Board?.Cells.ToDictionary(c => (c.X, c.Y)) ?? [];
+    }
+
+    private Task HandleClick(BoardCellDto cell) =>
+        cell.Type == "Wall" ? Task.CompletedTask : OnCellClick.InvokeAsync(new PositionDto(cell.X, cell.Y));
+}

@@ -1,0 +1,47 @@
+@using OpenCase.Shared.Dtos
+
+<div class="modal-backdrop">
+    <div class="modal suggestion-modal">
+        <h3>Dar palpite em <span class="logo-accent">@LocationName</span></h3>
+
+        <h4>Quem?</h4>
+        <div class="modal-card-grid">
+            @foreach (var suspect in Suspects)
+            {
+                <button type="button" data-card-id="@suspect.Id"
+                        class="modal-card @(suspect.Id == _suspectId ? "selected" : "")"
+                        @onclick="() => _suspectId = suspect.Id">@suspect.Name</button>
+            }
+        </div>
+
+        <h4>Com o quê?</h4>
+        <div class="modal-card-grid">
+            @foreach (var weapon in Weapons)
+            {
+                <button type="button" data-card-id="@weapon.Id"
+                        class="modal-card @(weapon.Id == _weaponId ? "selected" : "")"
+                        @onclick="() => _weaponId = weapon.Id">@weapon.Name</button>
+            }
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="secondary-button" @onclick="() => OnCancel.InvokeAsync()">Cancelar</button>
+            <button type="button" class="confirm-button primary-button"
+                    disabled="@(_suspectId is null || _weaponId is null)"
+                    @onclick="ConfirmAsync">Confirmar palpite</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<CardDto> Suspects { get; set; } = [];
+    [Parameter] public List<CardDto> Weapons { get; set; } = [];
+    [Parameter] public string LocationName { get; set; } = string.Empty;
+    [Parameter] public EventCallback<(Guid SuspectId, Guid WeaponId)> OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private Guid? _suspectId;
+    private Guid? _weaponId;
+
+    private Task ConfirmAsync() => OnConfirm.InvokeAsync((_suspectId!.Value, _weaponId!.Value));
+}
