@@ -20,7 +20,7 @@ public class GameHub(
     SuggestionService suggestionService,
     RefutationService refutationService,
     FinalAccusationService finalAccusationService,
-    BoardService boardService) : Hub
+    SecretPassageService secretPassageService) : Hub
 {
     private record ConnectionInfo(Guid RoomId, Guid PlayerId);
 
@@ -272,20 +272,13 @@ public class GameHub(
             var game = gameManager.GetGameByRoom(info.RoomId);
             EnsureCurrentPlayer(game, info.PlayerId);
 
+            var target = secretPassageService.UseSecretPassage(game, info.PlayerId);
             var position = game.PawnPositions[info.PlayerId];
-            var location = boardService.GetLocationByCell(game.Board, position.X, position.Y)
-                ?? throw new InvalidOperationException("É preciso estar dentro de um local.");
-            var target = boardService.GetSecretPassageTarget(game.Board, location.Id)
-                ?? throw new InvalidOperationException("Este local não possui passagem secreta.");
-
-            var entrance = target.EntranceCells[0];
-            game.PawnPositions[info.PlayerId] = new BoardPosition(entrance.X, entrance.Y);
-            game.TurnState.Phase = Domain.Enums.TurnPhase.Suggestion;
 
             await Clients.Group(GroupName(info.RoomId)).SendAsync("PawnMoved", new
             {
                 PlayerId = info.PlayerId,
-                Position = new PositionDto(entrance.X, entrance.Y),
+                Position = new PositionDto(position.X, position.Y),
                 EnteredLocation = true,
                 LocationId = (Guid?)target.Id,
             });

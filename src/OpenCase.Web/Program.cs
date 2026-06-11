@@ -28,6 +28,7 @@ builder.Services.AddSingleton<SuggestionService>();
 builder.Services.AddSingleton<RefutationService>();
 builder.Services.AddSingleton<FinalAccusationService>();
 builder.Services.AddSingleton<HintService>();
+builder.Services.AddSingleton<SecretPassageService>();
 builder.Services.AddSingleton<GameManager>();
 
 var app = builder.Build();
