@@ -94,6 +94,10 @@ public class GameHub(
                 GameStateMapper.ToPublicState(game),
                 GameStateMapper.ToBoardDto(game.Board));
 
+            // Os NOMES das cartas são públicos (todos veem o baralho); as mãos não.
+            await Clients.Group(GroupName(info.RoomId)).SendAsync(
+                "CardCatalog", game.AllCards.Select(GameStateMapper.ToCardDto).ToList());
+
             // Cada jogador recebe a própria mão em privado.
             foreach (var hand in game.Hands)
             {

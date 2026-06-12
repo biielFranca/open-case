@@ -16,6 +16,7 @@ public class GameClientService(NavigationManager navigation) : IAsyncDisposable
     public PublicGameStateDto? GameState { get; private set; }
     public BoardDto? Board { get; private set; }
     public PlayerHandDto? Hand { get; private set; }
+    public List<CardDto> AllCards { get; private set; } = [];
     public PublicHintDto? LastHint { get; private set; }
     public PrivateCardShownDto? LastPrivateCard { get; private set; }
     public string? LastError { get; private set; }
@@ -46,6 +47,7 @@ public class GameClientService(NavigationManager navigation) : IAsyncDisposable
             OnGameStarted?.Invoke();
         });
         _hub.On<PlayerHandDto>("PrivateHand", hand => Update(() => Hand = hand));
+        _hub.On<List<CardDto>>("CardCatalog", cards => Update(() => AllCards = cards));
         _hub.On<PublicGameStateDto>("TurnUpdated", state => Update(() => GameState = state));
         _hub.On<PublicHintDto>("HintReceived", hint => Update(() => LastHint = hint));
         _hub.On<PrivateCardShownDto>("PrivateCardShown", shown => Update(() => LastPrivateCard = shown));

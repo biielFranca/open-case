@@ -39,10 +39,18 @@ var app = builder.Build();
 
 if (!string.IsNullOrWhiteSpace(connectionString))
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<OpenCaseDbContext>();
-    await db.Database.MigrateAsync();
-    await DataSeeder.SeedAsync(db);
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OpenCaseDbContext>();
+        await db.Database.MigrateAsync();
+        await DataSeeder.SeedAsync(db);
+    }
+    catch (Exception ex)
+    {
+        // Sem banco acessível a aplicação continua: o estado das partidas vive em memória.
+        app.Logger.LogWarning(ex, "Banco indisponível; iniciando sem persistência.");
+    }
 }
 
 if (!app.Environment.IsDevelopment())
