@@ -1,5 +1,7 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+    min-height: 100%;
 }
 
 a, .btn-link {
@@ -164,15 +166,124 @@ h1:focus {
     .mobile-hidden { display: none; }
 }
 
-.board-view { display: grid; grid-template-columns: repeat(var(--board-cols, 20), 1.6rem); gap: 1px; background: #0a0f0c; border: 2px solid var(--oc-gold); border-radius: 0.4rem; width: fit-content; padding: 2px; }
-.board-cell { width: 1.6rem; height: 1.6rem; position: relative; cursor: pointer; }
-.cell-path { background: #243029; }
-.cell-wall { background: #11181410; background-color: #131c16; cursor: default; }
-.cell-entrance { background: var(--oc-gold); opacity: 0.75; }
-.cell-location { background: #1c2a21; }
-.cell-secretpassage { background: #3a2d4f; }
-.board-cell.selected { outline: 2px solid var(--oc-green-soft); outline-offset: -2px; }
-.board-pawn { position: absolute; inset: 15%; border-radius: 50%; border: 1.5px solid #fff3; }
+.board-view {
+    --board-cell-size: clamp(1.25rem, 2vw, 1.7rem);
+    display: grid;
+    grid-template-columns: repeat(var(--board-cols, 20), var(--board-cell-size));
+    grid-template-rows: repeat(var(--board-cols, 20), var(--board-cell-size));
+    gap: 1px;
+    isolation: isolate;
+    background:
+        radial-gradient(circle at center, #26382f 0, #111b16 68%, #080c0a 100%);
+    border: 3px double var(--oc-gold);
+    border-radius: 0.55rem;
+    box-shadow: 0 1rem 2.5rem #0009, inset 0 0 2rem #000b;
+    width: fit-content;
+    padding: 3px;
+}
+
+.board-room-layer {
+    z-index: 0;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    pointer-events: none;
+    background-image: linear-gradient(180deg, transparent 45%, #040706b8), var(--room-image);
+    background-size: cover;
+    background-position: center;
+    border: 1px solid #d2aa6270;
+    box-shadow: inset 0 0 0 1px #000b, inset 0 0 1.3rem #0009;
+}
+
+.board-room-layer.has-secret-passage {
+    box-shadow: inset 0 0 0 1px #bea8e280, inset 0 0 1.3rem #110d1dcc;
+}
+
+.board-room-name {
+    max-width: 90%;
+    padding: 0.12rem 0.28rem;
+    margin-bottom: 0.15rem;
+    border-radius: 0.2rem;
+    background: #080b09c9;
+    color: #ead7ae;
+    font-size: clamp(0.34rem, 0.55vw, 0.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px #000;
+}
+
+.board-cell {
+    z-index: 2;
+    width: var(--board-cell-size);
+    height: var(--board-cell-size);
+    position: relative;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.cell-path {
+    background:
+        linear-gradient(135deg, #ffffff06 25%, transparent 25%) 0 0 / 50% 50%,
+        linear-gradient(315deg, #0003 25%, transparent 25%) 0 0 / 50% 50%,
+        #243029;
+    box-shadow: inset 0 0 0 1px #b6954d12;
+}
+
+.cell-wall {
+    background: #080d0acc;
+    box-shadow: inset 0 0 0 1px #d6b87545;
+    cursor: default;
+}
+
+.cell-entrance {
+    background: linear-gradient(90deg, #8d6b2ccc, #e3c778dd, #8d6b2ccc);
+    box-shadow: inset 0 0 0 1px #fff5c966, 0 0 0.35rem #d0a84788;
+}
+
+.cell-location { background: #07100c12; }
+
+.cell-secretpassage {
+    background: #261d3d75;
+    box-shadow: inset 0 0 0 1px #b99ee0aa, 0 0 0.45rem #7b5ca8aa;
+}
+
+.cell-secretpassage::before,
+.cell-secretpassage::after {
+    content: "";
+    position: absolute;
+    inset: 24%;
+    border: 1px solid #dfc9ff;
+    transform: rotate(45deg);
+    box-shadow: 0 0 0.25rem #b28be8;
+}
+
+.cell-secretpassage::after {
+    inset: 36%;
+    background: #c2a8e8bb;
+}
+
+.board-cell.selected {
+    z-index: 4;
+    outline: 2px solid var(--oc-green-soft);
+    outline-offset: -2px;
+    background-color: #9ed9a54d;
+}
+
+.board-pawn {
+    position: absolute;
+    z-index: 5;
+    inset: 12%;
+    border-radius: 50%;
+    border: 2px solid #fff9;
+    box-shadow: 0 0.12rem 0.25rem #000c, 0 0 0.35rem currentColor;
+}
 
 .path-actions { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem; }
 

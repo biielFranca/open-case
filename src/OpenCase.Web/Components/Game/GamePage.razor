@@ -130,26 +130,15 @@
     private bool _showSuggestionModal;
     private bool _showAccusationModal;
 
-    // Catálogo de cartas conhecido pelo cliente (mão + palpites públicos).
-    private List<CardDto> _knownCards = [];
+    // Catálogo público de cartas (nomes são públicos; o conteúdo das mãos não).
+    private List<CardDto> _knownCards => Client.AllCards;
 
     protected override void OnInitialized()
     {
         Client.OnChange += HandleChange;
     }
 
-    private void HandleChange()
-    {
-        if (Client.Hand is not null)
-        {
-            foreach (var card in Client.Hand.Cards.Where(c => _knownCards.All(k => k.Id != c.Id)))
-            {
-                _knownCards.Add(card);
-            }
-        }
-
-        _ = InvokeAsync(StateHasChanged);
-    }
+    private void HandleChange() => _ = InvokeAsync(StateHasChanged);
 
     private Dictionary<Guid, string> PlayerNames =>
         Client.Room?.Players.ToDictionary(p => p.Id, p => p.Name) ?? [];

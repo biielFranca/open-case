@@ -5,7 +5,7 @@ using OpenCase.Domain.Enums;
 namespace OpenCase.Application.Services;
 
 /// <summary>
-/// Gerencia salas/lobby em memória: criação, entrada, peões, pronto e início.
+/// Gerencia salas/lobby em memória: criação, entrada, personagens, pronto e início.
 /// </summary>
 public class RoomService(Random random)
 {
@@ -14,14 +14,18 @@ public class RoomService(Random random)
 
     public static readonly IReadOnlyList<Pawn> AvailablePawns =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000001"), Name = "Lupa", Color = "#2e7d32" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000002"), Name = "Cartola", Color = "#c9a227" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000003"), Name = "Cachimbo", Color = "#8d4a2f" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000004"), Name = "Pena", Color = "#5b6abf" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000005"), Name = "Chave", Color = "#9c27b0" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000006"), Name = "Vela", Color = "#e65100" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000007"), Name = "Luva", Color = "#37474f" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000008"), Name = "Monóculo", Color = "#00838f" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000001"), Name = "Detetive Arthur Vale", Color = "#287D78" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000002"), Name = "Condessa Helena Vesper", Color = "#6E2638" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000003"), Name = "Professor Otávio Lacerda", Color = "#67408B" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000004"), Name = "Doutora Cecília Marinho", Color = "#A9CF1D" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000005"), Name = "Capitão Raul Ferraz", Color = "#405A72" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000006"), Name = "Madame Amélia Bellini", Color = "#A64078" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000007"), Name = "Jornalista Clara Vidal", Color = "#C96F32" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000008"), Name = "Juiz Afonso Brandão", Color = "#D8C7A1" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000009"), Name = "Mordomo Sebastião Leme", Color = "#6B4A32" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000010"), Name = "Cantora Íris Montenegro", Color = "#3157A4" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000011"), Name = "Empresário Vicente Dourado", Color = "#477A45" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000000012"), Name = "Jardineira Elisa Campos", Color = "#B65A32" },
     ];
 
     private readonly ConcurrentDictionary<Guid, Room> _rooms = new();
@@ -86,12 +90,12 @@ public class RoomService(Random random)
 
         if (AvailablePawns.All(p => p.Id != pawnId))
         {
-            throw new InvalidOperationException("Peão inexistente.");
+            throw new InvalidOperationException("Personagem inexistente.");
         }
 
         if (room.Players.Any(p => p.Id != playerId && p.PawnId == pawnId))
         {
-            throw new InvalidOperationException("Este peão já foi escolhido por outro jogador.");
+            throw new InvalidOperationException("Este personagem já foi escolhido por outro jogador.");
         }
 
         player.PawnId = pawnId;
@@ -124,7 +128,7 @@ public class RoomService(Random random)
         if (!CanStartGame(roomId))
         {
             throw new InvalidOperationException(
-                "A partida exige ao menos 3 jogadores, todos com peão escolhido e prontos.");
+                "A partida exige ao menos 3 jogadores, todos com personagem escolhido e prontos.");
         }
 
         room.Status = RoomStatus.InGame;

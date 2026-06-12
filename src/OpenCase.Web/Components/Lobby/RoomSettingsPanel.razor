@@ -1,8 +1,9 @@
 @using OpenCase.Shared.Dtos
 
 <aside class="room-settings-panel">
-    <h3 class="panel-title">Sua investigação</h3>
+    <h3 class="panel-title">Configurações da sala</h3>
 
+    <span class="settings-label">Escolha seu personagem</span>
     <div class="pawn-grid">
         @foreach (var pawn in AvailablePawns)
         {
@@ -13,20 +14,26 @@
                     data-pawn-id="@pawn.Id"
                     disabled="@isTaken"
                     @onclick="() => OnchoosePawn.InvokeAsync(pawn.Id)">
-                @pawn.Name
+                <span class="pawn-option-portrait">
+                    <img src="@CharacterVisuals.ImageFor(pawn.Name)" alt="" />
+                    <span class="pawn-option-dot"></span>
+                </span>
+                <span class="pawn-option-name">@CharacterVisuals.ShortName(pawn.Name)</span>
             </button>
         }
     </div>
 
     <label class="ready-toggle">
         <input type="checkbox" checked="@IsReady" @onchange="e => OnSetReady.InvokeAsync((bool)e.Value!)" />
-        Estou pronto
+        <span class="ready-check"></span>
+        <span>@(IsReady ? "Investigador pronto" : "Marcar como pronto")</span>
     </label>
 
     <button type="button"
             class="start-button"
             disabled="@(!(IsHost && CanStart))"
             @onclick="() => OnStartGame.InvokeAsync()">
+        <span class="start-icon" aria-hidden="true"></span>
         Iniciar partida
     </button>
 

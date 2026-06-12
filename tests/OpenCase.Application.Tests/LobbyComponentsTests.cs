@@ -13,12 +13,15 @@ public class LobbyComponentsTests : BunitContext
     public void PlayerLobbyCard_ShowsNameHostBadgeAndReadyState()
     {
         var player = CreatePlayer(isHost: true, isReady: true);
+        var pawn = new PawnDto(Guid.NewGuid(), "Detetive Arthur Vale", "#287D78");
 
         var cut = Render<PlayerLobbyCard>(p => p
             .Add(c => c.Player, player)
-            .Add(c => c.PawnColor, "#c9a227"));
+            .Add(c => c.Pawn, pawn));
 
         Assert.Contains("Biel", cut.Markup);
+        Assert.Contains("Arthur Vale", cut.Markup);
+        Assert.Contains("images/characters/arthur-vale.jpg", cut.Markup);
         Assert.NotEmpty(cut.FindAll(".host-badge"));
         Assert.NotEmpty(cut.FindAll(".ready-badge"));
     }
@@ -57,7 +60,7 @@ public class LobbyComponentsTests : BunitContext
     [Fact]
     public void RoomSettingsPanel_StartButtonOnlyEnabledForHostWhenAllReady()
     {
-        var pawns = new List<PawnDto> { new(Guid.NewGuid(), "Lupa", "#2e7d32") };
+        var pawns = new List<PawnDto> { new(Guid.NewGuid(), "Detetive Arthur Vale", "#287D78") };
 
         var cut = Render<RoomSettingsPanel>(p => p
             .Add(c => c.AvailablePawns, pawns)
@@ -79,8 +82,8 @@ public class LobbyComponentsTests : BunitContext
     [Fact]
     public void RoomSettingsPanel_TakenPawnIsDisabled()
     {
-        var taken = new PawnDto(Guid.NewGuid(), "Lupa", "#2e7d32");
-        var free = new PawnDto(Guid.NewGuid(), "Cartola", "#c9a227");
+        var taken = new PawnDto(Guid.NewGuid(), "Detetive Arthur Vale", "#287D78");
+        var free = new PawnDto(Guid.NewGuid(), "Condessa Helena Vesper", "#6E2638");
 
         var cut = Render<RoomSettingsPanel>(p => p
             .Add(c => c.AvailablePawns, [taken, free])
@@ -90,5 +93,6 @@ public class LobbyComponentsTests : BunitContext
 
         Assert.True(cut.Find($"[data-pawn-id='{taken.Id}']").HasAttribute("disabled"));
         Assert.False(cut.Find($"[data-pawn-id='{free.Id}']").HasAttribute("disabled"));
+        Assert.Equal(2, cut.FindAll(".pawn-option-portrait img").Count);
     }
 }

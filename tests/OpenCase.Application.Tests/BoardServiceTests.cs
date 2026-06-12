@@ -47,12 +47,12 @@ public class BoardServiceTests
     }
 
     [Fact]
-    public void EveryLocationHasOneOrTwoEntrances()
+    public void EveryLocationHasExactlyOneEntrance()
     {
         var board = _service.CreateDefaultBoard();
 
         Assert.All(board.Locations, location =>
-            Assert.InRange(location.EntranceCells.Count, 1, 2));
+            Assert.Single(location.EntranceCells));
     }
 
     [Fact]
@@ -78,13 +78,14 @@ public class BoardServiceTests
         var board = _service.CreateDefaultBoard();
         var locationsWithPassage = board.Locations.Where(l => l.SecretPassageToLocationId is not null).ToList();
 
-        Assert.NotEmpty(locationsWithPassage);
+        Assert.Equal(4, locationsWithPassage.Count);
         foreach (var location in locationsWithPassage)
         {
             var target = _service.GetSecretPassageTarget(board, location.Id);
             Assert.NotNull(target);
             Assert.NotEqual(location.Id, target!.Id);
             Assert.Contains(board.Locations, l => l.Id == target.Id);
+            Assert.Equal(location.Id, target.SecretPassageToLocationId);
         }
     }
 

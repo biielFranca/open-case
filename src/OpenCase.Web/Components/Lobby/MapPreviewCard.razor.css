@@ -1,0 +1,49 @@
+.map-preview-card {
+    width: auto;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    padding: 0 0 0.65rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid rgba(201, 142, 57, 0.35);
+}
+
+.map-kicker {
+    display: block;
+    color: #a9cf1d;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.map-title {
+    margin: 0.15rem 0 0.55rem;
+    color: #f0e5d3;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.38rem;
+    font-weight: 500;
+}
+
+.map-preview-image {
+    position: relative;
+    overflow: hidden;
+    height: clamp(6.5rem, 14vh, 9rem);
+    border: 1px solid #c98e39;
+    background: #07100f;
+    clip-path: polygon(0.45rem 0, calc(100% - 0.45rem) 0, 100% 0.45rem, 100% calc(100% - 0.45rem), calc(100% - 0.45rem) 100%, 0.45rem 100%, 0 calc(100% - 0.45rem), 0 0.45rem);
+}
+
+.map-preview-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.map-description {
+    margin: 0.55rem 0 0;
+    color: #c8b89d;
+    font-size: 0.73rem;
+    line-height: 1.35;
+    text-align: center;
+}

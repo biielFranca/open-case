@@ -124,18 +124,20 @@ public class BoardService
     {
         if (rowY == RowStarts[0])
         {
-            // Salas do topo: 1 entrada na borda inferior, voltada ao corredor y=5.
+            // Salas do topo: entrada na borda inferior, voltada ao corredor y=5.
             yield return new BoardPosition(colX + 1, rowY + RoomHeight - 1);
         }
         else if (rowY == RowStarts[1])
         {
-            // Salas do meio: 2 entradas (borda superior e inferior).
-            yield return new BoardPosition(colX + 1, rowY);
-            yield return new BoardPosition(colX + 2, rowY + RoomHeight - 1);
+            // Salas do meio alternam a direção para distribuir as entradas pelo mapa.
+            var columnIndex = Array.IndexOf(ColumnStarts, colX);
+            yield return columnIndex % 2 == 0
+                ? new BoardPosition(colX + 1, rowY)
+                : new BoardPosition(colX + 2, rowY + RoomHeight - 1);
         }
         else
         {
-            // Salas de baixo: 1 entrada na borda superior, voltada ao corredor y=13.
+            // Salas de baixo: entrada na borda superior, voltada ao corredor y=13.
             yield return new BoardPosition(colX + 1, rowY);
         }
     }

@@ -3,6 +3,14 @@
 <div class="board-view" style="--board-cols:@(Board?.Width ?? 20)">
     @if (Board is not null)
     {
+        @foreach (var location in Board.Locations)
+        {
+            <div class="board-room-layer @(location.HasSecretPassage ? "has-secret-passage" : "")"
+                 style="@GetRoomStyle(location)">
+                <span class="board-room-name">@location.Name</span>
+            </div>
+        }
+
         @for (var y = 0; y < Board.Height; y++)
         {
             var row = y;
@@ -13,6 +21,8 @@
                 var isSelected = SelectedPath.Any(p => p.X == col && p.Y == row);
                 <div class="board-cell cell-@cell.Type.ToLowerInvariant() @(isSelected ? "selected" : "")"
                      data-cell="@($"{col}-{row}")"
+                     style="@($"grid-column:{col + 1};grid-row:{row + 1}")"
+                     title="@GetCellTitle(cell)"
                      @onclick="() => HandleClick(cell)">
                     @foreach (var pawn in PawnPositions.Where(p => p.Value.X == col && p.Value.Y == row))
                     {
@@ -32,12 +42,68 @@
     [Parameter] public EventCallback<PositionDto> OnCellClick { get; set; }
 
     private Dictionary<(int X, int Y), BoardCellDto> _cellLookup = [];
+    private Dictionary<Guid, LocationBounds> _locationBounds = [];
+    private Dictionary<Guid, string> _locationNames = [];
+
+    private static readonly Dictionary<string, string> LocationAssets = new()
+    {
+        ["Biblioteca"] = "biblioteca",
+        ["Salão de Festas"] = "salao-de-festas",
+        ["Cozinha"] = "cozinha",
+        ["Escritório"] = "escritorio",
+        ["Jardim de Inverno"] = "jardim-de-inverno",
+        ["Sala de Jantar"] = "sala-de-jantar",
+        ["Salão de Jogos"] = "salao-de-jogos",
+        ["Hall"] = "hall",
+        ["Estufa"] = "estufa",
+        ["Porão"] = "porao",
+        ["Observatório"] = "observatorio",
+        ["Quarto de Hóspedes"] = "quarto-de-hospedes",
+    };
 
     protected override void OnParametersSet()
     {
-        _cellLookup = Board?.Cells.ToDictionary(c => (c.X, c.Y)) ?? [];
+        if (Board is not { } board)
+        {
+            _cellLookup = [];
+            _locationNames = [];
+            _locationBounds = [];
+            return;
+        }
+
+        _cellLookup = board.Cells.ToDictionary(c => (c.X, c.Y));
+        _locationNames = board.Locations.ToDictionary(l => l.Id, l => l.Name);
+        _locationBounds = board.Locations.ToDictionary(
+            location => location.Id,
+            location =>
+            {
+                var cells = board.Cells.Where(cell => cell.LocationId == location.Id).ToList();
+                var minX = cells.Min(cell => cell.X);
+                var minY = cells.Min(cell => cell.Y);
+                return new LocationBounds(
+                    minX,
+                    minY,
+                    cells.Max(cell => cell.X) - minX + 1,
+                    cells.Max(cell => cell.Y) - minY + 1);
+            });
     }
+
+    private string GetRoomStyle(BoardLocationDto location)
+    {
+        var bounds = _locationBounds[location.Id];
+        var asset = LocationAssets[location.Name];
+        return $"grid-column:{bounds.X + 1}/span {bounds.Width};grid-row:{bounds.Y + 1}/span {bounds.Height};--room-image:url('/images/board/locations/{asset}.jpg')";
+    }
+
+    private string GetCellTitle(BoardCellDto cell) =>
+        cell.Type == "SecretPassage"
+            ? $"Passagem secreta em {_locationNames.GetValueOrDefault(cell.LocationId ?? Guid.Empty, "local desconhecido")}"
+            : cell.LocationId is Guid locationId
+                ? _locationNames.GetValueOrDefault(locationId, string.Empty)
+                : string.Empty;
 
     private Task HandleClick(BoardCellDto cell) =>
         cell.Type == "Wall" ? Task.CompletedTask : OnCellClick.InvokeAsync(new PositionDto(cell.X, cell.Y));
+
+    private sealed record LocationBounds(int X, int Y, int Width, int Height);
 }

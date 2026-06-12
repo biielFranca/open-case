@@ -1,3 +1,4 @@
+@page "/"
 @page "/lobby"
 @using OpenCase.Application.Services
 @using OpenCase.Shared.Dtos
@@ -7,74 +8,143 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<PageTitle>Open Case — Lobby</PageTitle>
+<PageTitle>Open Case</PageTitle>
 
-<div class="lobby-page">
-    <header class="lobby-header">
-        <div class="logo">OPEN <span class="logo-accent">CASE</span></div>
-        @if (Room is not null)
-        {
+@if (Room is null)
+{
+    <div class="login-page">
+        <div class="login-grain" aria-hidden="true"></div>
+
+        <main class="login-shell">
+            <section class="login-art" aria-hidden="true">
+                <div class="login-art-frame">
+                    <img src="images/login-detective.jpg" alt="" />
+                </div>
+            </section>
+
+            <section class="login-panel">
+                <div class="login-brand" aria-label="Open Case">
+                    <span class="login-brand-open">OPEN</span>
+                    <span class="login-brand-case">CASE</span>
+                    <span class="login-brand-rule"></span>
+                </div>
+
+                <div class="login-form">
+                    <label class="login-field">
+                        <span class="login-label">Nome</span>
+                        <span class="login-input-shell">
+                            <span class="login-input-icon login-input-icon-user" aria-hidden="true"></span>
+                            <input class="login-input"
+                                   placeholder="Digite seu nome"
+                                   aria-label="Nome"
+                                   autocomplete="nickname"
+                                   @bind="Client.PlayerName"
+                                   @bind:event="oninput"
+                                   maxlength="30" />
+                        </span>
+                    </label>
+
+                    <button type="button"
+                            class="login-button login-button-primary"
+                            @onclick="CreateRoomAsync"
+                            disabled="@(!CanInteract)">
+                        <span class="login-button-icon" aria-hidden="true">+</span>
+                        Criar sala
+                    </button>
+
+                    <div class="login-divider" aria-hidden="true"><span>ou</span></div>
+
+                    <label class="login-field">
+                        <span class="login-label">Código da sala</span>
+                        <span class="login-input-shell">
+                            <span class="login-input-icon login-input-icon-key" aria-hidden="true"></span>
+                            <input class="login-input login-code-input"
+                                   placeholder="EX: A1B2C3"
+                                   aria-label="Código da sala"
+                                   autocomplete="off"
+                                   autocapitalize="characters"
+                                   @bind="_joinCode"
+                                   @bind:event="oninput"
+                                   maxlength="6" />
+                        </span>
+                    </label>
+
+                    <button type="button"
+                            class="login-button login-button-secondary"
+                            @onclick="JoinRoomAsync"
+                            disabled="@(!CanJoin)">
+                        Entrar na sala
+                        <span class="login-button-arrow" aria-hidden="true"></span>
+                    </button>
+
+                    @if (Client.LastError is not null)
+                    {
+                        <p class="login-error" @onclick="Client.ClearError">@Client.LastError</p>
+                    }
+                </div>
+            </section>
+        </main>
+    </div>
+}
+else
+{
+    <div class="lobby-page">
+        <header class="lobby-header">
+            <div class="lobby-brand">
+                <span class="lobby-brand-lens" aria-hidden="true"></span>
+                <span class="lobby-brand-text">OPEN <strong>CASE</strong></span>
+            </div>
             <div class="top-slots">
                 @for (var i = 0; i < 8; i++)
                 {
                     var player = i < Room.Players.Count ? Room.Players[i] : null;
-                    <PlayerTopSlot Player="player" PawnColor="@ColorOf(player)" />
+                    <PlayerTopSlot Player="player" Pawn="@PawnOf(player)" SlotNumber="@(i + 1)" />
                 }
             </div>
-        }
-    </header>
+        </header>
 
-    @if (Room is null)
-    {
-        <section class="lobby-entry">
-            <h2>Abra o caso.</h2>
-            <input class="text-input" placeholder="Seu nome" @bind="Client.PlayerName" maxlength="30" />
-            <div class="entry-actions">
-                <button class="primary-button" @onclick="CreateRoomAsync" disabled="@(!CanInteract)">Criar sala</button>
-                <div class="join-group">
-                    <input class="text-input" placeholder="Código da sala" @bind="_joinCode" maxlength="6" />
-                    <button class="secondary-button" @onclick="JoinRoomAsync" disabled="@(!CanInteract)">Entrar</button>
-                </div>
-            </div>
-            @if (Client.LastError is not null)
-            {
-                <p class="error-text">@Client.LastError</p>
-            }
-        </section>
-    }
-    else
-    {
         <div class="lobby-layout">
             <main class="lobby-main">
-                <RoomCodeBox Code="@Room.Code" />
                 <div class="lobby-cards">
                     @foreach (var player in Room.Players)
                     {
-                        <PlayerLobbyCard Player="player" PawnColor="@ColorOf(player)" />
+                        <PlayerLobbyCard Player="player" Pawn="@PawnOf(player)" />
                     }
                     @for (var i = Room.Players.Count; i < 8; i++)
                     {
                         <EmptyLobbyCard />
                     }
                 </div>
-                <MapPreviewCard />
             </main>
-            <RoomSettingsPanel AvailablePawns="_pawns"
-                               TakenPawnIds="TakenPawns"
-                               SelectedPawnId="Me?.PawnId"
-                               IsReady="Me?.IsReady ?? false"
-                               IsHost="Me?.IsHost ?? false"
-                               CanStart="CanStart"
-                               OnchoosePawn="Client.ChoosePawnAsync"
-                               OnSetReady="Client.SetReadyAsync"
-                               OnStartGame="Client.StartGameAsync" />
+
+            <aside class="lobby-side-panel">
+                <MapPreviewCard />
+                <RoomSettingsPanel AvailablePawns="_pawns"
+                                   TakenPawnIds="TakenPawns"
+                                   SelectedPawnId="Me?.PawnId"
+                                   IsReady="Me?.IsReady ?? false"
+                                   IsHost="Me?.IsHost ?? false"
+                                   CanStart="CanStart"
+                                   OnchoosePawn="Client.ChoosePawnAsync"
+                                   OnSetReady="Client.SetReadyAsync"
+                                   OnStartGame="Client.StartGameAsync" />
+                <RoomCodeBox Code="@Room.Code" />
+            </aside>
         </div>
+
+        <footer class="lobby-footer">
+            <span class="lobby-footer-info">i</span>
+            <span>Convide investigadores para completar o caso.</span>
+            <span class="lobby-footer-rule"></span>
+            <span class="lobby-footer-mark">OPEN CASE</span>
+        </footer>
+
         @if (Client.LastError is not null)
         {
-            <p class="error-text">@Client.LastError</p>
+            <p class="lobby-error" @onclick="Client.ClearError">@Client.LastError</p>
         }
-    }
-</div>
+    </div>
+}
 
 @code {
     private string _joinCode = string.Empty;
@@ -85,6 +155,7 @@
     private RoomDto? Room => Client.Room;
 
     private bool CanInteract => !string.IsNullOrWhiteSpace(Client.PlayerName);
+    private bool CanJoin => CanInteract && !string.IsNullOrWhiteSpace(_joinCode);
 
     private PlayerDto? Me => Room?.Players.FirstOrDefault(p => p.Id == Client.MyPlayerId);
 
@@ -96,8 +167,8 @@
         && Room.Players.Count >= 3
         && Room.Players.All(p => p.PawnId is not null && p.IsReady);
 
-    private string? ColorOf(PlayerDto? player) =>
-        player?.PawnId is null ? null : _pawns.FirstOrDefault(p => p.Id == player.PawnId)?.Color;
+    private PawnDto? PawnOf(PlayerDto? player) =>
+        player?.PawnId is null ? null : _pawns.FirstOrDefault(p => p.Id == player.PawnId);
 
     protected override void OnInitialized()
     {

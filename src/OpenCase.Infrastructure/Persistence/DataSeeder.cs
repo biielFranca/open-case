@@ -26,14 +26,23 @@ public static class DataSeeder
             context.Cards.AddRange(WeaponNames.Select(n => new Card { Type = CardType.Weapon, Name = n }));
         }
 
-        if (!await context.Pawns.AnyAsync(cancellationToken))
+        var storedPawns = await context.Pawns.ToDictionaryAsync(p => p.Id, cancellationToken);
+        foreach (var pawn in RoomService.AvailablePawns)
         {
-            context.Pawns.AddRange(RoomService.AvailablePawns.Select(p => new Pawn
+            if (storedPawns.TryGetValue(pawn.Id, out var stored))
             {
-                Id = p.Id,
-                Name = p.Name,
-                Color = p.Color,
-            }));
+                stored.Name = pawn.Name;
+                stored.Color = pawn.Color;
+            }
+            else
+            {
+                context.Pawns.Add(new Pawn
+                {
+                    Id = pawn.Id,
+                    Name = pawn.Name,
+                    Color = pawn.Color,
+                });
+            }
         }
 
         if (!await context.BoardTemplates.AnyAsync(cancellationToken))

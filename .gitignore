@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Configuracao local do Claude/preview
+.claude/
+.visual-preview/

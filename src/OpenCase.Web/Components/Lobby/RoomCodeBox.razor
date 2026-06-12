@@ -2,9 +2,10 @@
 
 <div class="room-code-box">
     <span class="room-code-label">Código da sala</span>
-    <span class="room-code">@Code</span>
+    <strong class="room-code">@Code</strong>
     <button type="button" class="copy-button" @onclick="CopyAsync">
-        @(_copied ? "Copiado!" : "Copiar")
+        <span class="copy-icon" aria-hidden="true"></span>
+        @(_copied ? "Copiado!" : "Copiar código")
     </button>
 </div>
 

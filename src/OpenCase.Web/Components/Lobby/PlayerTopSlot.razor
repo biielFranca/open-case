@@ -1,18 +1,32 @@
 @using OpenCase.Shared.Dtos
 
-<div class="top-slot @(Player is null ? "top-slot-empty" : "")">
+<div class="top-slot @(Player is null ? "top-slot-empty" : "top-slot-filled")"
+     style="--pawn-color:@(Pawn?.Color ?? "#745e43")">
     @if (Player is not null)
     {
-        <span class="top-slot-dot" style="background:@(PawnColor ?? "#444")"></span>
-        <span class="top-slot-name">@Player.Name</span>
+        <img class="top-slot-avatar" src="@CharacterVisuals.ImageFor(Pawn?.Name)" alt="" />
+        <span class="top-slot-details">
+            <span class="top-slot-number">@SlotNumber</span>
+            <span class="top-slot-name">@Player.Name</span>
+            <span class="top-slot-character">@(Pawn is null ? "Escolhendo personagem" : CharacterVisuals.ShortName(Pawn.Name))</span>
+        </span>
+        @if (Player.IsHost)
+        {
+            <span class="top-slot-host">Host</span>
+        }
     }
     else
     {
-        <span class="top-slot-name">—</span>
+        <span class="top-slot-silhouette" aria-hidden="true"></span>
+        <span class="top-slot-details">
+            <span class="top-slot-number">@SlotNumber</span>
+            <span class="top-slot-name">Vazio</span>
+        </span>
     }
 </div>
 
 @code {
     [Parameter] public PlayerDto? Player { get; set; }
-    [Parameter] public string? PawnColor { get; set; }
+    [Parameter] public PawnDto? Pawn { get; set; }
+    [Parameter] public int SlotNumber { get; set; }
 }

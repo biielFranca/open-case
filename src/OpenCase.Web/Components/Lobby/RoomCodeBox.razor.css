@@ -1,0 +1,68 @@
+.room-code-box {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.28rem 0.75rem;
+    align-items: center;
+    width: auto;
+    margin-top: auto;
+    border: 0;
+    border-top: 1px solid rgba(201, 142, 57, 0.35);
+    border-radius: 0;
+    background: none;
+    padding: 0.65rem 0 0;
+}
+
+.room-code-label {
+    grid-column: 1 / -1;
+    color: #a9cf1d;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.room-code {
+    overflow: hidden;
+    color: #f1e5d1;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.35rem;
+    letter-spacing: 0.13em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.copy-button {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(201, 142, 57, 0.6);
+    border-radius: 0;
+    background: rgba(201, 142, 57, 0.08);
+    color: #dcc092;
+    padding: 0.58rem 0.7rem;
+    font: inherit;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.copy-button:hover {
+    border-color: #d7a752;
+    background: rgba(201, 142, 57, 0.14);
+}
+
+.copy-icon {
+    position: relative;
+    width: 0.7rem;
+    height: 0.8rem;
+    border: 1px solid currentColor;
+}
+
+.copy-icon::before {
+    content: "";
+    position: absolute;
+    inset: -0.22rem 0.18rem 0.18rem -0.22rem;
+    border: 1px solid currentColor;
+}
