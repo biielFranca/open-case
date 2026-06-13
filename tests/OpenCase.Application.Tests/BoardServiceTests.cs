@@ -9,11 +9,11 @@ public class BoardServiceTests
     private readonly BoardService _service = new();
 
     [Fact]
-    public void CreateDefaultBoard_Is20x20WithACellForEveryCoordinate()
+    public void CreateDefaultBoard_Is30x30WithACellForEveryCoordinate()
     {
         var board = _service.CreateDefaultBoard();
 
-        Assert.Equal(400, board.Cells.Count);
+        Assert.Equal(900, board.Cells.Count);
         for (var x = 0; x < Board.Width; x++)
         {
             for (var y = 0; y < Board.Height; y++)
@@ -36,8 +36,8 @@ public class BoardServiceTests
     [Theory]
     [InlineData(-1, 0)]
     [InlineData(0, -1)]
-    [InlineData(20, 0)]
-    [InlineData(0, 20)]
+    [InlineData(30, 0)]
+    [InlineData(0, 30)]
     public void GetCell_OutsideGridReturnsNull(int x, int y)
     {
         var board = _service.CreateDefaultBoard();
@@ -47,12 +47,13 @@ public class BoardServiceTests
     }
 
     [Fact]
-    public void EveryLocationHasExactlyOneEntrance()
+    public void EveryLocationHasAnEntranceAndSomeHaveMultipleDoors()
     {
         var board = _service.CreateDefaultBoard();
 
         Assert.All(board.Locations, location =>
-            Assert.Single(location.EntranceCells));
+            Assert.NotEmpty(location.EntranceCells));
+        Assert.Contains(board.Locations, location => location.EntranceCells.Count >= 3);
     }
 
     [Fact]

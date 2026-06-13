@@ -1,0 +1,95 @@
+.board-view {
+    --board-cell-size: clamp(0.74rem, 1.48vw, 1.38rem);
+    position: relative;
+    transform: rotateX(43deg);
+    transform-style: preserve-3d;
+    transform-origin: center center;
+    border-width: 4px;
+    box-shadow:
+        0 1.5rem 0 #07100b,
+        0 2.4rem 2.8rem #000e,
+        inset 0 0 2.5rem #000d;
+}
+
+.board-view::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: -0.75rem;
+    border: 1px solid #8d722f;
+    background: #0b1510;
+    box-shadow: 0 0.8rem 0 #050806, 0 1rem 2rem #000d;
+    transform: translateZ(-0.45rem);
+}
+
+.board-room-layer {
+    transform: translateZ(0.2rem);
+    transform-style: preserve-3d;
+    border-width: 2px;
+    filter: drop-shadow(0.12rem 0.42rem 0.24rem #000c);
+}
+
+.board-room-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(232, 201, 123, 0.22);
+    box-shadow: inset 0 0 1.4rem #000a;
+    pointer-events: none;
+}
+
+.board-cell {
+    transform-style: preserve-3d;
+    transition: transform 100ms ease, filter 100ms ease;
+}
+
+.board-cell:not(.cell-wall):hover {
+    z-index: 6;
+    filter: brightness(1.35);
+    transform: translateZ(0.22rem);
+}
+
+.cell-wall {
+    transform: translateZ(0.32rem);
+    box-shadow: inset 0 0 0 1px #d6b8754d, 0.12rem 0.28rem 0 #030604b8;
+}
+
+.cell-entrance,
+.cell-secretpassage {
+    transform: translateZ(0.36rem);
+}
+
+.board-cell.selected {
+    transform: translateZ(0.48rem);
+    box-shadow: 0 0 0.7rem #83d699;
+}
+
+.board-pawn {
+    inset: 4% 18% 18%;
+    border-width: 3px;
+    border-radius: 50% 50% 44% 44%;
+    transform: translateZ(1rem);
+    box-shadow:
+        0 0.3rem 0 color-mix(in srgb, currentColor 60%, #121a15),
+        0 0.55rem 0.55rem #000c,
+        0 0 0.5rem currentColor;
+}
+
+.board-pawn::after {
+    content: "";
+    position: absolute;
+    right: 15%;
+    top: 12%;
+    width: 26%;
+    height: 22%;
+    border-radius: 50%;
+    background: #fff9;
+    filter: blur(0.5px);
+}
+
+@media (max-width: 720px) {
+    .board-view {
+        --board-cell-size: 0.78rem;
+        transform: rotateX(39deg);
+    }
+}

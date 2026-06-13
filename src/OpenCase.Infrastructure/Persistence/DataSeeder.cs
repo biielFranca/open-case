@@ -7,7 +7,7 @@ using OpenCase.Domain.Enums;
 namespace OpenCase.Infrastructure.Persistence;
 
 /// <summary>
-/// Seed inicial: 8 suspeitos, 12 locais, 8 armas, 8 peões e o mapa 20x20 padrão.
+/// Seed inicial: suspeitos, locais, armas, personagens e a planta padrão da mansão.
 /// </summary>
 public static class DataSeeder
 {
@@ -49,7 +49,7 @@ public static class DataSeeder
         {
             context.BoardTemplates.Add(new BoardTemplate
             {
-                Name = "Mansão Open Case (20x20)",
+                Name = "Mansão Open Case (30x30)",
                 Json = JsonSerializer.Serialize(board),
             });
         }

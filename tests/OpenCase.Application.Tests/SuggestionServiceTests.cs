@@ -36,7 +36,7 @@ public class SuggestionServiceTests
         _location = board.Locations[0];
         var entrance = _location.EntranceCells[0];
         _game.PawnPositions[_accuser] = new BoardPosition(entrance.X, entrance.Y);
-        _game.PawnPositions[_cited] = new BoardPosition(4, 5); // corredor
+        _game.PawnPositions[_cited] = new BoardPosition(7, 29); // corredor principal
         _game.TurnState.CurrentPlayerId = _accuser;
         _game.TurnState.TurnOrder = [_accuser, _cited];
     }
@@ -44,7 +44,7 @@ public class SuggestionServiceTests
     [Fact]
     public void CreateSuggestion_FailsWhenPlayerIsOutsideLocation()
     {
-        _game.PawnPositions[_accuser] = new BoardPosition(4, 5);
+        _game.PawnPositions[_accuser] = new BoardPosition(7, 29);
 
         Assert.Throws<InvalidOperationException>(() =>
             _service.CreateSuggestion(_game, _accuser, _suspectOfCited.Id, _weapon.Id));

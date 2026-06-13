@@ -1,6 +1,6 @@
 @using OpenCase.Shared.Dtos
 
-<div class="board-view" style="--board-cols:@(Board?.Width ?? 20)">
+<div class="board-view" style="--board-cols:@(Board?.Width ?? 30);--board-rows:@(Board?.Height ?? 30)">
     @if (Board is not null)
     {
         @foreach (var location in Board.Locations)
@@ -19,7 +19,7 @@
                 var col = x;
                 var cell = _cellLookup[(col, row)];
                 var isSelected = SelectedPath.Any(p => p.X == col && p.Y == row);
-                <div class="board-cell cell-@cell.Type.ToLowerInvariant() @(isSelected ? "selected" : "")"
+                <div class="board-cell cell-@cell.Type.ToLowerInvariant() @GetCellVisualClass(cell) @(isSelected ? "selected" : "")"
                      data-cell="@($"{col}-{row}")"
                      style="@($"grid-column:{col + 1};grid-row:{row + 1}")"
                      title="@GetCellTitle(cell)"
@@ -101,6 +101,43 @@
             : cell.LocationId is Guid locationId
                 ? _locationNames.GetValueOrDefault(locationId, string.Empty)
                 : string.Empty;
+
+    private string GetCellVisualClass(BoardCellDto cell)
+    {
+        if (cell.Type == "Entrance")
+        {
+            return GetDoorClass(cell.X, cell.Y);
+        }
+
+        if (cell.Type != "Path")
+        {
+            return string.Empty;
+        }
+
+        if (cell.Y >= 28 || cell.X is 7 or 8 or 17 or 18 or 24)
+        {
+            return "floor-marble";
+        }
+
+        if (cell.Y is 8 or 9 or 18 or 19 or 20)
+        {
+            return "floor-runner";
+        }
+
+        return "floor-wood";
+    }
+
+    private string GetDoorClass(int x, int y)
+    {
+        if (IsPath(x, y - 1)) return "door-top";
+        if (IsPath(x, y + 1)) return "door-bottom";
+        if (IsPath(x - 1, y)) return "door-left";
+        if (IsPath(x + 1, y)) return "door-right";
+        return string.Empty;
+    }
+
+    private bool IsPath(int x, int y) =>
+        _cellLookup.TryGetValue((x, y), out var cell) && cell.Type == "Path";
 
     private Task HandleClick(BoardCellDto cell) =>
         cell.Type == "Wall" ? Task.CompletedTask : OnCellClick.InvokeAsync(new PositionDto(cell.X, cell.Y));

@@ -34,7 +34,7 @@ public class GameManager(
         for (var i = 0; i < playerIds.Count; i++)
         {
             game.PlayerSuspects[playerIds[i]] = suspectCards[i].Id;
-            // Peões começam espalhados no corredor inferior (y=19 é linha de corredor).
+            // Peões começam espalhados na entrada principal, ao sul da mansão.
             game.PawnPositions[playerIds[i]] = new BoardPosition(2 + i * 2, Board.Height - 1);
         }
 

@@ -13,7 +13,7 @@ persistidas entre reinícios do servidor.
 - A cada partida o jogo sorteia uma solução secreta: 1 suspeito + 1 local + 1 arma.
 - As demais cartas são embaralhadas e distribuídas entre os jogadores (distribuição desigual é permitida).
 - A ordem dos turnos é definida por dado inicial (1–6); empates no maior valor são re-sorteados.
-- No turno, o jogador rola um dado de 1 a 12 e move o peão pelo tabuleiro 20x20 (sem diagonais, sem atravessar paredes; é preciso usar todo o dado, exceto ao entrar em um local).
+- No turno, o jogador rola um dado de 1 a 12 e move o peão pela planta 30x30 da mansão (sem diagonais, sem atravessar paredes; é preciso usar todo o dado, exceto ao entrar em um local).
 - Dentro de um local, o jogador pode dar um **palpite** (suspeito + arma; o local é sempre o atual). O peão do suspeito citado é puxado para o local.
 - A **refutação** começa no jogador anterior ao acusador e segue em ordem reversa: quem tiver carta citada é obrigado a mostrar uma — apenas ao acusador.
 - Se ninguém refutar, o autor pode fazer a **acusação final** com aquele palpite. Acertou: venceu. Errou: perde o próximo turno e a solução continua secreta.

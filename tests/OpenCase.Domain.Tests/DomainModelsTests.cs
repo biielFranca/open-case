@@ -85,12 +85,12 @@ public class DomainModelsTests
     }
 
     [Fact]
-    public void Board_Holds20x20GridAndLocations()
+    public void Board_Holds30x30GridAndLocations()
     {
         var board = new Board();
 
-        Assert.Equal(20, Board.Width);
-        Assert.Equal(20, Board.Height);
+        Assert.Equal(30, Board.Width);
+        Assert.Equal(30, Board.Height);
         Assert.Empty(board.Cells);
         Assert.Empty(board.Locations);
     }

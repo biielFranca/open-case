@@ -35,7 +35,7 @@ public class SecretPassageServiceTests
     [Fact]
     public void CanUseSecretPassage_FalseWhenOutsideAnyLocation()
     {
-        _game.PawnPositions[_playerId] = new BoardPosition(4, 5); // corredor
+        _game.PawnPositions[_playerId] = new BoardPosition(7, 29); // corredor principal
 
         Assert.False(_service.CanUseSecretPassage(_game, _playerId));
     }
@@ -83,7 +83,7 @@ public class SecretPassageServiceTests
     [Fact]
     public void UseSecretPassage_ThrowsWhenNotAllowed()
     {
-        _game.PawnPositions[_playerId] = new BoardPosition(4, 5);
+        _game.PawnPositions[_playerId] = new BoardPosition(7, 29);
 
         Assert.Throws<InvalidOperationException>(() => _service.UseSecretPassage(_game, _playerId));
 

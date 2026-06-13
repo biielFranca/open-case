@@ -1,4 +1,5 @@
 @page "/game"
+@using OpenCase.Application.Services
 @using OpenCase.Shared.Dtos
 @using OpenCase.Web.Services
 @rendermode InteractiveServer
@@ -21,77 +22,142 @@
         var state = Client.GameState;
         var isMyTurn = state.Turn.CurrentPlayerId == Client.MyPlayerId;
 
-        <nav class="game-tabs">
-            @foreach (var tab in Tabs)
-            {
-                <button type="button" class="game-tab @(tab == _activeTab ? "active" : "")"
-                        @onclick="() => _activeTab = tab">@tab</button>
-            }
-        </nav>
+        <main class="game-hub">
+            <section class="game-table" aria-label="Mesa da investigação">
+                <div class="game-player-ring">
+                    @for (var index = 0; index < Players.Count; index++)
+                    {
+                        var player = Players[index];
+                        <GamePlayerSeat Player="player"
+                                        Pawn="@PawnOf(player)"
+                                        SeatNumber="@(index + 1)"
+                                        IsCurrentTurn="@(state.Turn.CurrentPlayerId == player.Id)"
+                                        IsMe="@(Client.MyPlayerId == player.Id)" />
+                    }
+                </div>
 
-        <div class="game-layout">
-            <section class="game-board-area @(IsVisible("Tabuleiro") ? "" : "mobile-hidden")">
-                <BoardView Board="Client.Board"
-                           PawnPositions="state.PawnPositions"
-                           PawnColors="PawnColors"
-                           SelectedPath="_selectedPath"
-                           OnCellClick="HandleCellClick" />
-                @if (_selectedPath.Count > 0)
-                {
-                    <div class="path-actions">
-                        <span>@_selectedPath.Count / @(state.Turn.DiceValue ?? 0) passos</span>
-                        <button class="primary-button" @onclick="ConfirmMoveAsync">Mover</button>
-                        <button class="secondary-button" @onclick="() => _selectedPath.Clear()">Limpar</button>
+                <section class="game-board-stage">
+                    <div class="game-board-aura" aria-hidden="true"></div>
+                    <div class="game-board-perspective">
+                        <BoardView Board="Client.Board"
+                                   PawnPositions="state.PawnPositions"
+                                   PawnColors="PawnColors"
+                                   SelectedPath="_selectedPath"
+                                   OnCellClick="HandleCellClick" />
                     </div>
-                }
+
+                    @if (_selectedPath.Count > 0)
+                    {
+                        <div class="path-actions">
+                            <span>@_selectedPath.Count / @(state.Turn.DiceValue ?? 0) passos</span>
+                            <button class="primary-button" @onclick="ConfirmMoveAsync">Mover</button>
+                            <button class="secondary-button" @onclick="() => _selectedPath.Clear()">Limpar</button>
+                        </div>
+                    }
+                </section>
             </section>
 
-            <aside class="game-side @(IsVisible("Ações") ? "" : "mobile-hidden")">
-                <TurnPanel Turn="state.Turn" PlayerNames="PlayerNames" MyPlayerId="Client.MyPlayerId" />
-                <DicePanel DiceValue="state.Turn.DiceValue"
-                           CanRoll="@(isMyTurn && state.Turn.Phase == "RollDice")"
-                           OnRoll="Client.RollTurnDiceAsync" />
-                @if (state.Turn.TurnOrder.Count == 0)
-                {
-                    <button class="primary-button" @onclick="Client.RollInitialDiceAsync">Sortear ordem inicial</button>
-                }
-                @if (isMyTurn && state.Turn.Phase == "Suggestion")
-                {
-                    <button class="primary-button" @onclick="() => _showSuggestionModal = true">Dar palpite</button>
-                    <button class="secondary-button" @onclick="Client.UseSecretPassageAsync">Passagem secreta</button>
-                }
-                @if (isMyTurn && state.Turn.Phase == "FinalAccusation")
-                {
-                    <button class="primary-button" @onclick="() => _showAccusationModal = true">Acusação final</button>
-                }
-                @if (Client.LastError is not null)
-                {
-                    <p class="error-text" @onclick="Client.ClearError">@Client.LastError</p>
-                }
-                @if (Client.LastPrivateCard is not null)
-                {
-                    <div class="private-card-banner">
-                        <strong>@PlayerNames.GetValueOrDefault(Client.LastPrivateCard.ShownByPlayerId, "?")</strong>
-                        mostrou: <strong>@Client.LastPrivateCard.Card.Name</strong>
-                        <button class="hint-close" @onclick="Client.ClearPrivateCard">×</button>
+            <section class="game-console">
+                <aside class="game-event-console">
+                    <span class="console-kicker">Central do caso</span>
+                    <TurnPanel Turn="state.Turn" PlayerNames="PlayerNames" MyPlayerId="Client.MyPlayerId" />
+
+                    <div class="game-event-feed">
+                        @if (Client.LastError is not null)
+                        {
+                            <button class="game-event game-event-error" @onclick="Client.ClearError">
+                                <strong>Atenção</strong>
+                                <span>@Client.LastError</span>
+                            </button>
+                        }
+                        else if (Client.LastPrivateCard is not null)
+                        {
+                            <button class="game-event" @onclick="Client.ClearPrivateCard">
+                                <strong>Carta revelada</strong>
+                                <span>@PlayerNames.GetValueOrDefault(Client.LastPrivateCard.ShownByPlayerId, "?") mostrou @Client.LastPrivateCard.Card.Name</span>
+                            </button>
+                        }
+                        else if (Client.LastHint is not null)
+                        {
+                            <button class="game-event" @onclick="Client.ClearHint">
+                                <strong>Nova pista</strong>
+                                <span>@Client.LastHint.Text</span>
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="game-event game-event-empty">
+                                <strong>Eventos da partida</strong>
+                                <span>As novas pistas aparecerão aqui.</span>
+                            </div>
+                        }
                     </div>
-                }
-            </aside>
+                </aside>
 
-            <section class="game-hand-area @(IsVisible("Cartas") ? "" : "mobile-hidden")">
-                <h4 class="panel-title">Suas cartas</h4>
-                <PlayerHand Cards="MyCards" />
-            </section>
+                <section class="game-hand-console">
+                    <div class="console-heading">
+                        <span class="console-kicker">Arquivo pessoal</span>
+                        <strong>Suas cartas</strong>
+                    </div>
+                    <PlayerHand Cards="MyCards" />
+                </section>
 
-            <section class="game-notes-area @(IsVisible("Notas") ? "" : "mobile-hidden")">
-                <h4 class="panel-title">Bloco de notas</h4>
-                <NotesGrid Suspects="SuspectCards"
-                           Locations="LocationCards"
-                           Weapons="WeaponCards"
-                           Marked="_notes"
-                           OnToggle="ToggleNote" />
+                <aside class="game-action-console">
+                    <span class="console-kicker">Ações</span>
+                    <DicePanel DiceValue="state.Turn.DiceValue"
+                               CanRoll="@(isMyTurn && state.Turn.Phase == "RollDice")"
+                               OnRoll="Client.RollTurnDiceAsync" />
+
+                    <div class="game-action-grid">
+                        <button type="button" class="action-tile notes-action" @onclick="() => _showNotes = !_showNotes">
+                            <span class="action-icon action-icon-notes" aria-hidden="true"></span>
+                            Bloco de notas
+                        </button>
+
+                        @if (state.Turn.TurnOrder.Count == 0)
+                        {
+                            <button class="action-tile action-tile-primary" @onclick="Client.RollInitialDiceAsync">
+                                Sortear ordem
+                            </button>
+                        }
+                        @if (isMyTurn && state.Turn.Phase == "Suggestion")
+                        {
+                            <button class="action-tile action-tile-primary" @onclick="() => _showSuggestionModal = true">
+                                Dar palpite
+                            </button>
+                            <button class="action-tile" @onclick="Client.UseSecretPassageAsync">
+                                Passagem secreta
+                            </button>
+                        }
+                        @if (isMyTurn && state.Turn.Phase == "FinalAccusation")
+                        {
+                            <button class="action-tile action-tile-danger" @onclick="() => _showAccusationModal = true">
+                                Acusação final
+                            </button>
+                        }
+                    </div>
+                </aside>
             </section>
-        </div>
+        </main>
+
+        <aside class="game-notes-drawer @(_showNotes ? "open" : "")" aria-hidden="@(!_showNotes)">
+            <div class="notes-drawer-heading">
+                <div>
+                    <span class="console-kicker">Investigação</span>
+                    <h3>Bloco de notas</h3>
+                </div>
+                <button type="button" class="notes-close" aria-label="Fechar bloco de notas" @onclick="() => _showNotes = false">×</button>
+            </div>
+            <NotesGrid Suspects="SuspectCards"
+                       Locations="LocationCards"
+                       Weapons="WeaponCards"
+                       Marked="_notes"
+                       OnToggle="ToggleNote" />
+        </aside>
+        @if (_showNotes)
+        {
+            <button type="button" class="notes-drawer-backdrop" aria-label="Fechar bloco de notas" @onclick="() => _showNotes = false"></button>
+        }
 
         @if (_showSuggestionModal)
         {
@@ -117,21 +183,20 @@
                                   OnConfirm="ConfirmAccusationAsync"
                                   OnCancel="() => _showAccusationModal = false" />
         }
-
-        <HintPopup Hint="Client.LastHint" OnClose="Client.ClearHint" />
     }
 </div>
 
 @code {
-    private static readonly string[] Tabs = ["Tabuleiro", "Cartas", "Notas", "Ações"];
-    private string _activeTab = "Tabuleiro";
     private readonly List<PositionDto> _selectedPath = [];
     private readonly Dictionary<Guid, bool> _notes = [];
+    private readonly List<PawnDto> _pawns =
+        [.. RoomService.AvailablePawns.Select(p => new PawnDto(p.Id, p.Name, p.Color))];
     private bool _showSuggestionModal;
     private bool _showAccusationModal;
+    private bool _showNotes;
 
-    // Catálogo público de cartas (nomes são públicos; o conteúdo das mãos não).
     private List<CardDto> _knownCards => Client.AllCards;
+    private List<PlayerDto> Players => Client.Room?.Players ?? [];
 
     protected override void OnInitialized()
     {
@@ -144,13 +209,11 @@
         Client.Room?.Players.ToDictionary(p => p.Id, p => p.Name) ?? [];
 
     private Dictionary<Guid, string> PawnColors =>
-        Client.Room?.Players
-            .Where(p => p.PawnId is not null)
-            .ToDictionary(
-                p => p.Id,
-                p => OpenCase.Application.Services.RoomService.AvailablePawns
-                    .FirstOrDefault(pawn => pawn.Id == p.PawnId)?.Color ?? "#888")
-        ?? [];
+        Players.Where(p => p.PawnId is not null)
+            .ToDictionary(p => p.Id, p => PawnOf(p)?.Color ?? "#888");
+
+    private PawnDto? PawnOf(PlayerDto? player) =>
+        player?.PawnId is null ? null : _pawns.FirstOrDefault(p => p.Id == player.PawnId);
 
     private List<CardDto> MyCards => Client.Hand?.Cards ?? [];
 
@@ -196,8 +259,6 @@
 
     private string CardName(Guid cardId) =>
         _knownCards.FirstOrDefault(c => c.Id == cardId)?.Name ?? "?";
-
-    private bool IsVisible(string tab) => _activeTab == tab;
 
     private void HandleCellClick(PositionDto position)
     {

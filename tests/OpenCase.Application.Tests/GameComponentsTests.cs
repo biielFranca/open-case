@@ -58,7 +58,29 @@ public class GameComponentsTests : BunitContext
         var cut = Render<PlayerHand>(p => p.Add(c => c.Cards, cards));
 
         Assert.Equal(2, cut.FindAll(".hand-card").Count);
+        Assert.Equal(2, cut.FindAll(".hand-card-image").Count);
         Assert.Contains("Coronel Mostarda", cut.Markup);
+        Assert.Contains("images/characters/raul-ferraz.jpg", cut.Markup);
+        Assert.Contains("images/cards/weapons/candlestick.png", cut.Markup);
+    }
+
+    [Fact]
+    public void GamePlayerSeat_ShowsCharacterPortraitAndTurnState()
+    {
+        var player = new PlayerDto(Guid.NewGuid(), "Biel", Guid.NewGuid(), true, true, "Connected");
+        var pawn = new PawnDto(player.PawnId!.Value, "Detetive Arthur Vale", "#287D78");
+
+        var cut = Render<GamePlayerSeat>(p => p
+            .Add(c => c.Player, player)
+            .Add(c => c.Pawn, pawn)
+            .Add(c => c.SeatNumber, 3)
+            .Add(c => c.IsCurrentTurn, true));
+
+        Assert.Contains("Biel", cut.Markup);
+        Assert.Contains("Arthur Vale", cut.Markup);
+        Assert.Contains("images/characters/arthur-vale.jpg", cut.Markup);
+        Assert.Contains("current-turn", cut.Find(".game-player-seat").ClassList);
+        Assert.Contains("seat-3", cut.Find(".game-player-seat").ClassList);
     }
 
     [Fact]

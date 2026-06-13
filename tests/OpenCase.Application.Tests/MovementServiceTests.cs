@@ -15,8 +15,8 @@ public class MovementServiceTests
     {
         _service = new MovementService(_boardService);
         _game = new Game { Board = _boardService.CreateDefaultBoard() };
-        // (4,5) é corredor: x=4 é coluna de corredor e y=5 é linha de corredor.
-        _game.PawnPositions[_playerId] = new BoardPosition(4, 5);
+        // A coluna x=7 é um corredor vertical que liga a entrada principal à ala oeste.
+        _game.PawnPositions[_playerId] = new BoardPosition(7, 29);
     }
 
     private static List<BoardPosition> Path(params (int X, int Y)[] steps) =>
@@ -25,18 +25,18 @@ public class MovementServiceTests
     [Fact]
     public void ValidateMove_AcceptsOrthogonalPathUsingFullDice()
     {
-        var result = _service.ValidateMove(_game, _playerId, Path((4, 6), (4, 7), (4, 8)), 3);
+        var result = _service.ValidateMove(_game, _playerId, Path((7, 28), (7, 27), (7, 26)), 3);
 
         Assert.True(result.IsValid);
         Assert.Empty(result.Errors);
-        Assert.Equal(new BoardPosition(4, 8), result.NewPosition);
+        Assert.Equal(new BoardPosition(7, 26), result.NewPosition);
         Assert.False(result.EnteredLocation);
     }
 
     [Fact]
     public void ValidateMove_RejectsDiagonalStep()
     {
-        var result = _service.ValidateMove(_game, _playerId, Path((5, 6)), 1);
+        var result = _service.ValidateMove(_game, _playerId, Path((8, 28)), 1);
 
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Errors);
@@ -45,8 +45,8 @@ public class MovementServiceTests
     [Fact]
     public void ValidateMove_RejectsPathThroughWall()
     {
-        // (3,5) é corredor; (3,4)... (1,4) é entrada; (3,4) é parede da sala do topo.
-        var result = _service.ValidateMove(_game, _playerId, Path((3, 5), (3, 4)), 2);
+        // (8,29) é corredor, mas (8,28) é a parede inferior do porão.
+        var result = _service.ValidateMove(_game, _playerId, Path((8, 29), (8, 28)), 2);
 
         Assert.False(result.IsValid);
     }
@@ -54,7 +54,7 @@ public class MovementServiceTests
     [Fact]
     public void ValidateMove_RejectsPathShorterThanDiceWhenNotEnteringLocation()
     {
-        var result = _service.ValidateMove(_game, _playerId, Path((4, 6), (4, 7)), 3);
+        var result = _service.ValidateMove(_game, _playerId, Path((7, 28), (7, 27)), 3);
 
         Assert.False(result.IsValid);
     }
@@ -62,7 +62,7 @@ public class MovementServiceTests
     [Fact]
     public void ValidateMove_RejectsPathLongerThanDice()
     {
-        var result = _service.ValidateMove(_game, _playerId, Path((4, 6), (4, 7), (4, 8), (4, 9)), 3);
+        var result = _service.ValidateMove(_game, _playerId, Path((7, 28), (7, 27), (7, 26), (7, 25)), 3);
 
         Assert.False(result.IsValid);
     }
@@ -70,20 +70,20 @@ public class MovementServiceTests
     [Fact]
     public void ValidateMove_EnteringLocationBeforeUsingFullDiceIsValidAndEndsMove()
     {
-        // Entrada da sala do topo-esquerda fica em (1,4), adjacente ao corredor (1,5).
-        var result = _service.ValidateMove(_game, _playerId, Path((3, 5), (2, 5), (1, 5), (1, 4)), 12);
+        // A porta leste da estufa fica em (6,24), adjacente ao corredor x=7.
+        var result = _service.ValidateMove(_game, _playerId, Path((7, 28), (7, 27), (7, 26), (7, 25), (7, 24), (6, 24)), 12);
 
         Assert.True(result.IsValid);
         Assert.True(result.EnteredLocation);
         Assert.NotNull(result.LocationId);
-        Assert.Equal(new BoardPosition(1, 4), result.NewPosition);
+        Assert.Equal(new BoardPosition(6, 24), result.NewPosition);
     }
 
     [Fact]
     public void ValidateMove_RejectsEntranceInMiddleOfPath()
     {
-        // Passar pela entrada (1,4) e continuar andando é inválido: entrar encerra o movimento.
-        var result = _service.ValidateMove(_game, _playerId, Path((3, 5), (2, 5), (1, 5), (1, 4), (1, 5)), 5);
+        // Passar pela porta da estufa e continuar andando é inválido: entrar encerra o movimento.
+        var result = _service.ValidateMove(_game, _playerId, Path((7, 28), (7, 27), (7, 26), (7, 25), (7, 24), (6, 24), (7, 24)), 7);
 
         Assert.False(result.IsValid);
     }
@@ -91,7 +91,7 @@ public class MovementServiceTests
     [Fact]
     public void ValidateMove_RejectsFirstStepNotAdjacentToCurrentPosition()
     {
-        var result = _service.ValidateMove(_game, _playerId, Path((4, 8)), 1);
+        var result = _service.ValidateMove(_game, _playerId, Path((7, 26)), 1);
 
         Assert.False(result.IsValid);
     }
@@ -100,16 +100,16 @@ public class MovementServiceTests
     public void ValidateMove_RejectsEmptyPathAndUnknownPlayer()
     {
         Assert.False(_service.ValidateMove(_game, _playerId, [], 3).IsValid);
-        Assert.False(_service.ValidateMove(_game, Guid.NewGuid(), Path((4, 6)), 1).IsValid);
+        Assert.False(_service.ValidateMove(_game, Guid.NewGuid(), Path((7, 28)), 1).IsValid);
     }
 
     [Fact]
     public void ValidateMove_AllowsSharingCellWithAnotherPawn()
     {
         var otherPlayer = Guid.NewGuid();
-        _game.PawnPositions[otherPlayer] = new BoardPosition(4, 6);
+        _game.PawnPositions[otherPlayer] = new BoardPosition(7, 28);
 
-        var result = _service.ValidateMove(_game, _playerId, Path((4, 6)), 1);
+        var result = _service.ValidateMove(_game, _playerId, Path((7, 28)), 1);
 
         Assert.True(result.IsValid);
     }
@@ -117,10 +117,10 @@ public class MovementServiceTests
     [Fact]
     public void ApplyMove_UpdatesPawnPositionAndReportsLocation()
     {
-        var result = _service.ApplyMove(_game, _playerId, Path((3, 5), (2, 5), (1, 5), (1, 4)), 12);
+        var result = _service.ApplyMove(_game, _playerId, Path((7, 28), (7, 27), (7, 26), (7, 25), (7, 24), (6, 24)), 12);
 
         Assert.True(result.IsValid);
-        Assert.Equal(new BoardPosition(1, 4), _game.PawnPositions[_playerId]);
+        Assert.Equal(new BoardPosition(6, 24), _game.PawnPositions[_playerId]);
         Assert.True(result.EnteredLocation);
     }
 
@@ -129,7 +129,7 @@ public class MovementServiceTests
     {
         var before = _game.PawnPositions[_playerId];
 
-        var result = _service.ApplyMove(_game, _playerId, Path((5, 6)), 1);
+        var result = _service.ApplyMove(_game, _playerId, Path((8, 28)), 1);
 
         Assert.False(result.IsValid);
         Assert.Equal(before, _game.PawnPositions[_playerId]);

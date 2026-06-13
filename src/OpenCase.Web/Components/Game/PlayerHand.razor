@@ -7,6 +7,8 @@
                 class="hand-card card-@card.Type.ToLowerInvariant() @(card.Id == SelectedCardId ? "selected" : "")"
                 data-card-id="@card.Id"
                 @onclick="() => OnCardClick.InvokeAsync(card.Id)">
+            <img class="hand-card-image" src="@CardVisuals.ImageFor(card)" alt="" />
+            <span class="hand-card-shade" aria-hidden="true"></span>
             <span class="hand-card-type">@TranslateType(card.Type)</span>
             <span class="hand-card-name">@card.Name</span>
         </button>

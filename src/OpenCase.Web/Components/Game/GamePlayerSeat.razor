@@ -1,0 +1,30 @@
+@using OpenCase.Shared.Dtos
+@using OpenCase.Web.Components.Lobby
+
+<article class="game-player-seat seat-@SeatNumber @(IsCurrentTurn ? "current-turn" : "") @(IsMe ? "is-me" : "")"
+         style="--pawn-color:@(Pawn?.Color ?? "#53645b")">
+    <div class="game-player-avatar">
+        <img src="@CharacterVisuals.ImageFor(Pawn?.Name)" alt="" />
+        <span class="game-player-color" aria-hidden="true"></span>
+    </div>
+    <div class="game-player-identity">
+        <strong>@Player.Name</strong>
+        <span>@CharacterVisuals.ShortName(Pawn?.Name)</span>
+    </div>
+    @if (IsCurrentTurn)
+    {
+        <span class="game-player-turn">Vez atual</span>
+    }
+    else if (IsMe)
+    {
+        <span class="game-player-turn">Você</span>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public PlayerDto Player { get; set; } = default!;
+    [Parameter] public PawnDto? Pawn { get; set; }
+    [Parameter] public int SeatNumber { get; set; }
+    [Parameter] public bool IsCurrentTurn { get; set; }
+    [Parameter] public bool IsMe { get; set; }
+}

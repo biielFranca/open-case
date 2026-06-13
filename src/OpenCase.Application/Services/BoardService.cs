@@ -4,61 +4,49 @@ using OpenCase.Domain.Enums;
 namespace OpenCase.Application.Services;
 
 /// <summary>
-/// Tabuleiro 20x20 do MVP: 12 locais em grade 4x3, corredores entre eles,
-/// paredes no perímetro de cada local e entradas voltadas para os corredores.
+/// Planta principal da mansão: cômodos de tamanhos variados, corredores amplos
+/// e portas distribuídas de acordo com a arquitetura de cada ambiente.
 /// </summary>
 public class BoardService
 {
-    private static readonly string[] LocationNames =
+    private static readonly RoomSpec[] RoomSpecs =
     [
-        "Biblioteca", "Salão de Festas", "Cozinha", "Escritório",
-        "Jardim de Inverno", "Sala de Jantar", "Salão de Jogos", "Hall",
-        "Estufa", "Porão", "Observatório", "Quarto de Hóspedes",
-    ];
+        new("Biblioteca", 0, 0, 7, 7, [(3, 6), (6, 3)]),
+        new("Salão de Festas", 9, 0, 9, 8, [(12, 7), (15, 7)]),
+        new("Cozinha", 23, 0, 7, 7, [(23, 4), (26, 6)]),
 
-    // Retângulos dos 12 locais: 4 colunas x 3 linhas, salas de 4x5 células.
-    private static readonly int[] ColumnStarts = [0, 5, 11, 16];
-    private static readonly int[] RowStarts = [0, 7, 14];
-    private const int RoomWidth = 4;
-    private const int RoomHeight = 5;
+        new("Jardim de Inverno", 0, 10, 7, 8, [(6, 13), (3, 17)]),
+        new("Sala de Jantar", 9, 10, 8, 8, [(12, 10), (16, 14)]),
+        new("Hall", 19, 9, 5, 5, [(21, 9), (21, 13), (23, 11)]),
+        new("Escritório", 25, 9, 5, 9, [(25, 12), (27, 17)]),
+        new("Salão de Jogos", 18, 15, 7, 5, [(20, 15), (24, 18), (22, 19)]),
+
+        new("Estufa", 0, 21, 7, 7, [(6, 24)]),
+        new("Porão", 8, 22, 6, 7, [(10, 22), (13, 25)]),
+        new("Observatório", 16, 21, 7, 8, [(19, 21), (22, 25)]),
+        new("Quarto de Hóspedes", 24, 21, 6, 7, [(26, 21), (24, 25)]),
+    ];
 
     public Board CreateDefaultBoard()
     {
         var board = new Board();
-        var rects = new List<(BoardLocation Location, int X, int Y)>();
+        var rooms = RoomSpecs.Select(spec => (Spec: spec, Location: new BoardLocation { Name = spec.Name })).ToList();
 
-        var nameIndex = 0;
-        foreach (var rowY in RowStarts)
-        {
-            foreach (var colX in ColumnStarts)
-            {
-                var location = new BoardLocation { Name = LocationNames[nameIndex++] };
-                board.Locations.Add(location);
-                rects.Add((location, colX, rowY));
-            }
-        }
-
-        // Passagens secretas ligando os cantos opostos (como no jogo clássico).
-        LinkSecretPassage(rects[0].Location, rects[11].Location);
-        LinkSecretPassage(rects[3].Location, rects[8].Location);
+        board.Locations.AddRange(rooms.Select(room => room.Location));
+        LinkSecretPassage(rooms[0].Location, rooms[11].Location);
+        LinkSecretPassage(rooms[2].Location, rooms[8].Location);
 
         for (var x = 0; x < Board.Width; x++)
         {
             for (var y = 0; y < Board.Height; y++)
             {
-                board.Cells.Add(CreateCell(rects, x, y));
+                board.Cells.Add(new BoardCell { X = x, Y = y, Type = CellType.Path });
             }
         }
 
-        foreach (var (location, colX, rowY) in rects)
+        foreach (var room in rooms)
         {
-            foreach (var entrance in EntrancesFor(colX, rowY))
-            {
-                location.EntranceCells.Add(entrance);
-                var cell = GetCell(board, entrance.X, entrance.Y)!;
-                cell.Type = CellType.Entrance;
-                cell.LocationId = location.Id;
-            }
+            PaintRoom(board, room.Spec, room.Location);
         }
 
         return board;
@@ -91,54 +79,51 @@ public class BoardService
             : board.Locations.FirstOrDefault(l => l.Id == location.SecretPassageToLocationId);
     }
 
+    private static void PaintRoom(Board board, RoomSpec spec, BoardLocation location)
+    {
+        for (var x = spec.X; x < spec.X + spec.Width; x++)
+        {
+            for (var y = spec.Y; y < spec.Y + spec.Height; y++)
+            {
+                var isBorder = x == spec.X
+                    || x == spec.X + spec.Width - 1
+                    || y == spec.Y
+                    || y == spec.Y + spec.Height - 1;
+
+                var cell = board.Cells[x * Board.Height + y];
+                cell.Type = isBorder ? CellType.Wall : CellType.Location;
+                cell.LocationId = location.Id;
+            }
+        }
+
+        if (location.SecretPassageToLocationId is not null)
+        {
+            var passage = board.Cells[(spec.X + 1) * Board.Height + spec.Y + 1];
+            passage.Type = CellType.SecretPassage;
+        }
+
+        foreach (var (x, y) in spec.Entrances)
+        {
+            var entrance = new BoardPosition(x, y);
+            location.EntranceCells.Add(entrance);
+
+            var cell = board.Cells[x * Board.Height + y];
+            cell.Type = CellType.Entrance;
+            cell.LocationId = location.Id;
+        }
+    }
+
     private static void LinkSecretPassage(BoardLocation a, BoardLocation b)
     {
         a.SecretPassageToLocationId = b.Id;
         b.SecretPassageToLocationId = a.Id;
     }
 
-    private static BoardCell CreateCell(
-        List<(BoardLocation Location, int X, int Y)> rects, int x, int y)
-    {
-        foreach (var (location, rx, ry) in rects)
-        {
-            if (x < rx || x >= rx + RoomWidth || y < ry || y >= ry + RoomHeight)
-            {
-                continue;
-            }
-
-            var isBorder = x == rx || x == rx + RoomWidth - 1 || y == ry || y == ry + RoomHeight - 1;
-            var type = isBorder
-                ? CellType.Wall
-                : location.SecretPassageToLocationId is not null && x == rx + 1 && y == ry + 1
-                    ? CellType.SecretPassage
-                    : CellType.Location;
-
-            return new BoardCell { X = x, Y = y, Type = type, LocationId = location.Id };
-        }
-
-        return new BoardCell { X = x, Y = y, Type = CellType.Path };
-    }
-
-    private static IEnumerable<BoardPosition> EntrancesFor(int colX, int rowY)
-    {
-        if (rowY == RowStarts[0])
-        {
-            // Salas do topo: entrada na borda inferior, voltada ao corredor y=5.
-            yield return new BoardPosition(colX + 1, rowY + RoomHeight - 1);
-        }
-        else if (rowY == RowStarts[1])
-        {
-            // Salas do meio alternam a direção para distribuir as entradas pelo mapa.
-            var columnIndex = Array.IndexOf(ColumnStarts, colX);
-            yield return columnIndex % 2 == 0
-                ? new BoardPosition(colX + 1, rowY)
-                : new BoardPosition(colX + 2, rowY + RoomHeight - 1);
-        }
-        else
-        {
-            // Salas de baixo: entrada na borda superior, voltada ao corredor y=13.
-            yield return new BoardPosition(colX + 1, rowY);
-        }
-    }
+    private sealed record RoomSpec(
+        string Name,
+        int X,
+        int Y,
+        int Width,
+        int Height,
+        IReadOnlyList<(int X, int Y)> Entrances);
 }

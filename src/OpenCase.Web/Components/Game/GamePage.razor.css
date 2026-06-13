@@ -1,0 +1,430 @@
+.game-page {
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding: 0.85rem;
+    background:
+        radial-gradient(circle at 50% 22%, rgba(42, 73, 54, 0.58), transparent 38%),
+        linear-gradient(180deg, #111b16, #080d0a 72%);
+}
+
+.game-hub {
+    display: grid;
+    min-height: calc(100vh - 1.7rem);
+    grid-template-rows: minmax(34rem, 1fr) auto;
+    gap: 0.7rem;
+}
+
+.game-table {
+    position: relative;
+    min-height: 34rem;
+    overflow: hidden;
+    border: 1px solid rgba(201, 162, 39, 0.2);
+    background:
+        radial-gradient(ellipse at center, rgba(37, 57, 44, 0.68), rgba(6, 10, 8, 0.94) 70%),
+        repeating-linear-gradient(90deg, transparent 0 4rem, rgba(255, 255, 255, 0.012) 4rem 4.05rem);
+    box-shadow: inset 0 0 5rem #000c;
+}
+
+.game-table::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.18;
+    pointer-events: none;
+    background-image: radial-gradient(#d7c17c 0.6px, transparent 0.6px);
+    background-size: 4px 4px;
+}
+
+.game-player-ring {
+    position: absolute;
+    z-index: 7;
+    inset: 0;
+    pointer-events: none;
+}
+
+.game-player-ring ::deep .game-player-seat {
+    pointer-events: auto;
+}
+
+.game-board-stage {
+    position: absolute;
+    inset: 3.3rem 10.8rem 2.6rem;
+    display: grid;
+    place-items: center;
+    perspective: 1100px;
+    perspective-origin: 50% 38%;
+}
+
+.game-board-aura {
+    position: absolute;
+    width: min(78vw, 64rem);
+    height: 42%;
+    bottom: 13%;
+    border-radius: 50%;
+    background: #000c;
+    filter: blur(1.4rem);
+    transform: rotateX(62deg);
+}
+
+.game-board-perspective {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    transform-style: preserve-3d;
+}
+
+.path-actions {
+    position: absolute;
+    z-index: 12;
+    right: 1rem;
+    bottom: 0.35rem;
+    border: 1px solid #b69238;
+    background: #101713ee;
+    padding: 0.45rem;
+}
+
+.game-console {
+    position: relative;
+    z-index: 15;
+    display: grid;
+    min-height: 10.5rem;
+    grid-template-columns: minmax(12rem, 0.8fr) minmax(26rem, 2.5fr) minmax(18rem, 1fr);
+    gap: 0.7rem;
+}
+
+.game-event-console,
+.game-hand-console,
+.game-action-console {
+    min-width: 0;
+    border: 1px solid rgba(201, 162, 39, 0.42);
+    background: linear-gradient(150deg, rgba(23, 33, 27, 0.98), rgba(8, 14, 11, 0.99));
+    box-shadow: inset 0 0 1.5rem #0006, 0 0.7rem 1.5rem #0006;
+    padding: 0.75rem;
+}
+
+.console-kicker {
+    display: block;
+    margin-bottom: 0.38rem;
+    color: #b89a4b;
+    font-size: 0.61rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.game-event-console {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.game-event-console ::deep .turn-panel {
+    border: 0;
+    background: transparent;
+    padding: 0;
+}
+
+.game-event-feed {
+    display: grid;
+    flex: 1;
+}
+
+.game-event {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    border: 1px solid #304438;
+    background: #121e17;
+    color: #ded7c8;
+    padding: 0.55rem 0.65rem;
+    text-align: left;
+}
+
+button.game-event {
+    cursor: pointer;
+}
+
+.game-event strong {
+    color: #d7ba66;
+    font-size: 0.72rem;
+}
+
+.game-event span {
+    color: #9eaea3;
+    font-size: 0.68rem;
+}
+
+.game-event-error {
+    border-color: #9b473e;
+}
+
+.game-event-error strong {
+    color: #dd7a70;
+}
+
+.game-event-empty {
+    opacity: 0.7;
+}
+
+.game-hand-console {
+    display: flex;
+    min-height: 9rem;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.console-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    color: #e8dec8;
+}
+
+.game-hand-console ::deep .player-hand {
+    flex: 1;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow-x: auto;
+    padding: 0.25rem 0 0.35rem;
+    scrollbar-color: #8d7133 #0e1712;
+}
+
+.game-hand-console ::deep .hand-card {
+    position: relative;
+    min-width: 7.3rem;
+    max-width: 9rem;
+    flex: 1 0 7.3rem;
+    justify-content: flex-end;
+    overflow: hidden;
+    border-color: #bb963c;
+    background: #17231c;
+    box-shadow: inset 0 0 0 2px #0008;
+    padding: 2.4rem 0.65rem 0.65rem;
+    transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.game-hand-console ::deep .hand-card-image,
+.game-hand-console ::deep .hand-card-shade {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.game-hand-console ::deep .hand-card-image {
+    object-fit: cover;
+    object-position: center;
+    filter: saturate(0.82) contrast(1.04) brightness(0.82);
+    transition: filter 150ms ease, transform 180ms ease;
+}
+
+.game-hand-console ::deep .card-suspect .hand-card-image {
+    object-position: 42% 24%;
+}
+
+.game-hand-console ::deep .card-weapon .hand-card-image {
+    object-fit: contain;
+    padding: 0.55rem;
+    background: radial-gradient(circle at center, #384b3d, #101a14 72%);
+}
+
+.game-hand-console ::deep .hand-card-shade {
+    background: linear-gradient(180deg, transparent 25%, rgba(4, 8, 6, 0.48) 52%, rgba(4, 8, 6, 0.98) 90%);
+}
+
+.game-hand-console ::deep .hand-card-type,
+.game-hand-console ::deep .hand-card-name {
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 1px 3px #000;
+}
+
+.game-hand-console ::deep .hand-card:hover {
+    z-index: 2;
+    border-color: #ebca69;
+    transform: translateY(-0.24rem);
+}
+
+.game-hand-console ::deep .hand-card:hover .hand-card-image {
+    filter: saturate(1) contrast(1.08) brightness(0.98);
+    transform: scale(1.04);
+}
+
+.game-action-console {
+    display: flex;
+    flex-direction: column;
+}
+
+.game-action-console ::deep .dice-panel {
+    display: grid;
+    grid-template-columns: 3.5rem 1fr;
+    border: 0;
+    background: transparent;
+    padding: 0 0 0.55rem;
+}
+
+.game-action-console ::deep .dice-value {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    place-items: center;
+    border: 1px solid #c7a346;
+    background: #ece1c8;
+    box-shadow: inset 0 0 0 0.25rem #1a281f;
+    color: #17231c;
+}
+
+.game-action-console ::deep .roll-button {
+    height: 3rem;
+}
+
+.game-action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+}
+
+.action-tile {
+    min-height: 2.55rem;
+    border: 1px solid #52655a;
+    background: #18261e;
+    color: #d8d0be;
+    padding: 0.4rem 0.55rem;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.action-tile:hover {
+    border-color: #d0ac4c;
+    color: #f2e3be;
+}
+
+.action-tile-primary {
+    border-color: #5f985f;
+    background: #285c3e;
+}
+
+.action-tile-danger {
+    border-color: #a54d43;
+    background: #6f302d;
+}
+
+.notes-action {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.action-icon-notes {
+    width: 1rem;
+    height: 1.15rem;
+    border: 1px solid #d5b758;
+    background: repeating-linear-gradient(180deg, transparent 0 0.2rem, #d5b758 0.21rem 0.24rem);
+}
+
+.game-notes-drawer {
+    position: fixed;
+    z-index: 42;
+    top: 0;
+    right: 0;
+    width: min(25rem, 92vw);
+    height: 100vh;
+    overflow-y: auto;
+    border-left: 1px solid #c19b3c;
+    background: #101a14f8;
+    box-shadow: -1rem 0 3rem #000b;
+    color: #e8e6dd;
+    padding: 1rem;
+    transform: translateX(105%);
+    transition: transform 180ms ease;
+}
+
+.game-notes-drawer.open {
+    transform: translateX(0);
+}
+
+.notes-drawer-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+}
+
+.notes-drawer-heading h3 {
+    margin: 0;
+}
+
+.notes-close {
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid #806d3a;
+    background: #18261e;
+    color: #e7d69d;
+    cursor: pointer;
+    font-size: 1.3rem;
+}
+
+.notes-drawer-backdrop {
+    position: fixed;
+    z-index: 41;
+    inset: 0;
+    border: 0;
+    background: #0008;
+}
+
+@media (max-width: 1050px) {
+    .game-hub {
+        grid-template-rows: auto auto;
+    }
+
+    .game-table {
+        display: flex;
+        min-height: 0;
+        flex-direction: column;
+        overflow: visible;
+    }
+
+    .game-player-ring {
+        position: relative;
+        display: flex;
+        overflow-x: auto;
+        gap: 0.55rem;
+        padding: 0.65rem;
+    }
+
+    .game-board-stage {
+        position: relative;
+        inset: auto;
+        min-height: 32rem;
+        overflow: auto;
+    }
+
+    .game-console {
+        grid-template-columns: 1fr 1.7fr;
+    }
+
+    .game-action-console {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 720px) {
+    .game-page {
+        padding: 0.35rem;
+    }
+
+    .game-board-stage {
+        min-height: 26rem;
+        justify-content: start;
+    }
+
+    .game-console {
+        display: flex;
+        flex-direction: column;
+    }
+}
