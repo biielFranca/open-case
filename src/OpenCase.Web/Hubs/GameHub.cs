@@ -213,6 +213,10 @@ public class GameHub(
                 "SuggestionCreated", GameStateMapper.ToSuggestionDto(suggestion));
             await Clients.Group(GroupName(info.RoomId)).SendAsync(
                 "RefutationRequested", GameStateMapper.ToPublicRefutationDto(state));
+
+            // Atualiza o estado público (fase Refutação + refutação ativa) para que
+            // a UI de cada jogador reaja — em especial o modal de quem deve refutar.
+            await BroadcastTurn(info.RoomId, game);
         });
     }
 
@@ -256,6 +260,8 @@ public class GameHub(
             await SendToPlayer(shown.AccuserPlayerId, "PrivateCardShown",
                 new PrivateCardShownDto(shown.ShownByPlayerId, GameStateMapper.ToCardDto(card)));
 
+            // Palpite refutado encerra o turno do acusador; passa ao próximo jogador.
+            turnService.AdvanceTurn(game.TurnState);
             await BroadcastTurn(info.RoomId, game);
         });
     }
