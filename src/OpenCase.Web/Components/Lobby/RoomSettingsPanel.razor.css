@@ -214,3 +214,33 @@
     font-size: 0.6rem;
     text-align: center;
 }
+
+.add-bot-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 1px dashed #c9a227;
+    color: #e0c468;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.add-bot-button:hover:not(:disabled) {
+    background: rgba(201, 162, 39, 0.12);
+}
+
+.add-bot-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.add-bot-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}

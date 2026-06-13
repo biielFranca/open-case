@@ -61,6 +61,7 @@ public class GameClientService(NavigationManager navigation) : IAsyncDisposable
     public Task ChoosePawnAsync(Guid pawnId) => Invoke("ChoosePawn", pawnId);
     public Task SetReadyAsync(bool ready) => Invoke("SetReady", ready);
     public Task StartGameAsync() => Invoke("StartGame");
+    public Task AddBotAsync() => Invoke("AddBot");
     public Task RollInitialDiceAsync() => Invoke("RollInitialDice");
     public Task RollTurnDiceAsync() => Invoke("RollTurnDice");
     public Task MovePawnAsync(List<PositionDto> path) => Invoke("MovePawn", path);

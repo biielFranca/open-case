@@ -125,6 +125,8 @@ else
                                    IsReady="Me?.IsReady ?? false"
                                    IsHost="Me?.IsHost ?? false"
                                    CanStart="CanStart"
+                                   CanAddBot="CanAddBot"
+                                   OnAddBot="Client.AddBotAsync"
                                    OnchoosePawn="Client.ChoosePawnAsync"
                                    OnSetReady="Client.SetReadyAsync"
                                    OnStartGame="Client.StartGameAsync" />
@@ -161,6 +163,8 @@ else
 
     private HashSet<Guid> TakenPawns =>
         Room is null ? [] : [.. Room.Players.Where(p => p.PawnId is not null).Select(p => p.PawnId!.Value)];
+
+    private bool CanAddBot => Room is not null && Room.Players.Count < 8;
 
     private bool CanStart =>
         Room is not null

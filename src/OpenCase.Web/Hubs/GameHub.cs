@@ -20,7 +20,8 @@ public class GameHub(
     SuggestionService suggestionService,
     RefutationService refutationService,
     FinalAccusationService finalAccusationService,
-    SecretPassageService secretPassageService) : Hub
+    SecretPassageService secretPassageService,
+    Services.BotManager botManager) : Hub
 {
     private record ConnectionInfo(Guid RoomId, Guid PlayerId);
 
@@ -103,6 +104,26 @@ public class GameHub(
             {
                 await SendToPlayer(hand.PlayerId, "PrivateHand", GameStateMapper.ToPrivateHand(game, hand.PlayerId));
             }
+        });
+    }
+
+    public async Task AddBot()
+    {
+        await WithRoom(async info =>
+        {
+            var room = roomService.GetRoom(info.RoomId);
+            if (room.HostPlayerId != info.PlayerId)
+            {
+                throw new InvalidOperationException("Apenas o host pode adicionar bots.");
+            }
+
+            if (room.Players.Count >= Room.MaxPlayers)
+            {
+                throw new InvalidOperationException("A sala já está cheia.");
+            }
+
+            // O bot entra pelo fluxo normal de JoinRoom e atualiza a sala sozinho.
+            await botManager.AddBotAsync(room.Code);
         });
     }
 
