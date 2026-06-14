@@ -43,6 +43,7 @@
                                    PawnPositions="state.PawnPositions"
                                    PawnColors="PawnColors"
                                    SelectedPath="_selectedPath"
+                                   ReachableDestinations="LegalMovePaths.Keys"
                                    OnCellClick="HandleCellClick" />
                     </div>
 
@@ -120,7 +121,7 @@
                                 Sortear ordem
                             </button>
                         }
-                        @if (isMyTurn && state.Turn.Phase == "Suggestion")
+                        @if (CanSuggestNow)
                         {
                             <button class="action-tile action-tile-primary" @onclick="() => _showSuggestionModal = true">
                                 Dar palpite
@@ -223,6 +224,24 @@
     private List<CardDto> LocationCards => CardsOf("Location");
     private List<CardDto> WeaponCards => CardsOf("Weapon");
 
+    private IReadOnlyDictionary<PositionDto, List<PositionDto>> LegalMovePaths
+    {
+        get
+        {
+            var state = Client.GameState;
+            if (Client.Board is null
+                || state?.Turn.CurrentPlayerId != Client.MyPlayerId
+                || state.Turn.Phase != "Move"
+                || state.Turn.DiceValue is not int diceValue
+                || !state.PawnPositions.TryGetValue(Client.MyPlayerId, out var start))
+            {
+                return new Dictionary<PositionDto, List<PositionDto>>();
+            }
+
+            return BoardMovementPaths.FindLegalPaths(Client.Board, start, diceValue);
+        }
+    }
+
     private string CurrentLocationName
     {
         get
@@ -237,6 +256,15 @@
             return Client.Board.Locations.FirstOrDefault(l => l.Id == cell?.LocationId)?.Name ?? "?";
         }
     }
+
+    // O jogador pode palpitar sempre que for a vez dele e o peão estiver dentro de
+    // uma sala — inclusive quando começa o turno já em um cômodo (o tabuleiro novo
+    // posiciona os peões dentro das salas). O hub valida o local de fato.
+    private bool CanSuggestNow =>
+        Client.GameState is { } state
+        && state.Turn.CurrentPlayerId == Client.MyPlayerId
+        && state.Turn.Phase is "RollDice" or "Move" or "Suggestion"
+        && CurrentLocationName != "?";
 
     private bool NeedsMyRefutation =>
         Client.GameState?.ActiveRefutation is { IsResolved: false } refutation
@@ -262,12 +290,13 @@
 
     private void HandleCellClick(PositionDto position)
     {
-        if (Client.GameState?.Turn.Phase != "Move")
+        if (!LegalMovePaths.TryGetValue(position, out var path))
         {
             return;
         }
 
-        _selectedPath.Add(position);
+        _selectedPath.Clear();
+        _selectedPath.AddRange(path);
     }
 
     private async Task ConfirmMoveAsync()
