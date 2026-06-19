@@ -1,0 +1,32 @@
+@using OpenCase.Shared.Dtos
+
+<div class="card-reveal-overlay" @onclick="Dismiss">
+    <div class="card-reveal-stage" @onclick:stopPropagation="true">
+        <p class="card-reveal-who"><strong>@ShownByName</strong> mostrou uma carta a você</p>
+
+        <div class="card-reveal-card card-@Card.Type.ToLowerInvariant()">
+            <img class="card-reveal-image" src="@CardVisuals.ImageFor(Card)" alt="" />
+            <span class="card-reveal-shine" aria-hidden="true"></span>
+            <span class="card-reveal-type">@TranslateType(Card.Type)</span>
+            <span class="card-reveal-name">@Card.Name</span>
+        </div>
+
+        <button type="button" class="card-reveal-dismiss" @onclick="Dismiss">Continuar investigação</button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CardDto Card { get; set; } = default!;
+    [Parameter] public string ShownByName { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnDismiss { get; set; }
+
+    private Task Dismiss() => OnDismiss.InvokeAsync();
+
+    private static string TranslateType(string type) => type switch
+    {
+        "Suspect" => "Suspeito",
+        "Location" => "Local",
+        "Weapon" => "Arma",
+        _ => type,
+    };
+}

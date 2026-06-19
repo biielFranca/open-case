@@ -42,6 +42,7 @@
                         <BoardView Board="Client.Board"
                                    PawnPositions="state.PawnPositions"
                                    PawnColors="PawnColors"
+                                   PawnCharacters="PawnCharacters"
                                    SelectedPath="_selectedPath"
                                    ReachableDestinations="LegalMovePaths.Keys"
                                    OnCellClick="HandleCellClick" />
@@ -184,6 +185,13 @@
                                   OnConfirm="ConfirmAccusationAsync"
                                   OnCancel="() => _showAccusationModal = false" />
         }
+
+        @if (Client.LastPrivateCard is not null)
+        {
+            <CardRevealOverlay Card="Client.LastPrivateCard.Card"
+                               ShownByName="@PlayerNames.GetValueOrDefault(Client.LastPrivateCard.ShownByPlayerId, "Alguém")"
+                               OnDismiss="Client.ClearPrivateCard" />
+        }
     }
 </div>
 
@@ -212,6 +220,12 @@
     private Dictionary<Guid, string> PawnColors =>
         Players.Where(p => p.PawnId is not null)
             .ToDictionary(p => p.Id, p => PawnOf(p)?.Color ?? "#888");
+
+    private Dictionary<Guid, PawnDto> PawnCharacters =>
+        Players.Where(player => player.PawnId is not null)
+            .Select(player => (Player: player, Pawn: PawnOf(player)))
+            .Where(item => item.Pawn is not null)
+            .ToDictionary(item => item.Player.Id, item => item.Pawn!);
 
     private PawnDto? PawnOf(PlayerDto? player) =>
         player?.PawnId is null ? null : _pawns.FirstOrDefault(p => p.Id == player.PawnId);
