@@ -7,13 +7,13 @@ public static class CardCatalog
 {
     public static readonly string[] SuspectNames =
     [
-        "Coronel Mostarda", "Dona Violeta", "Professor Black", "Senhorita Rosa",
-        "Doutor Marinho", "Madame Café", "Capitão Cinza", "Jovem Verde",
+        .. RoomService.AvailablePawns.Select(pawn => pawn.Name),
     ];
 
     public static readonly string[] WeaponNames =
     [
         "Castiçal", "Adaga", "Corda", "Revólver",
         "Cano de Chumbo", "Chave Inglesa", "Veneno", "Abridor de Cartas",
+        "Troféu de Bronze", "Bengala-Espada", "Machado Cerimonial", "Fio de Piano",
     ];
 }

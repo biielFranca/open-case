@@ -1,5 +1,5 @@
 .notes-grid {
-    gap: 0.85rem;
+    gap: 1rem;
 }
 
 .notes-categories {
@@ -58,6 +58,7 @@
 
 .notes-section-heading {
     display: flex;
+    grid-column: 1 / -1;
     align-items: end;
     justify-content: space-between;
     gap: 0.8rem;
@@ -76,12 +77,109 @@
     white-space: nowrap;
 }
 
+.notes-section {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 0.55rem;
+}
+
 .notes-row {
-    min-height: 2.25rem;
+    position: relative;
+    display: flex;
+    min-height: 9.7rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    justify-content: flex-start;
+    padding: 0.35rem;
+    text-align: center;
+}
+
+.notes-card-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border: 1px solid #9f823c;
+    border-radius: 0.45rem;
+    background:
+        radial-gradient(circle at 50% 32%, #31473a, #111a14 68%),
+        #111a14;
+    box-shadow:
+        inset 0 0 0.9rem #0009,
+        0 0.2rem 0.45rem #000a;
+}
+
+.notes-card-thumb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #fff4 0 12%, transparent 28% 100%);
+    pointer-events: none;
+}
+
+.notes-card-thumb img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+[data-active-category="weapons"] .notes-card-thumb img {
+    padding: 0.45rem;
+    object-fit: contain;
+    filter: drop-shadow(0 0.22rem 0.18rem #000d);
+}
+
+.notes-card-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.1rem;
+    overflow: hidden;
+    padding: 0 0.12rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+}
+
+.notes-mark {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.55rem;
+    display: grid;
+    width: 1.45rem;
+    height: 1.45rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #210f0fcc;
+    box-shadow: 0 0.12rem 0.25rem #0009;
+}
+
+.notes-mark:empty {
+    display: none;
+}
+
+.notes-row.marked .notes-card-thumb img,
+.notes-row.marked .notes-card-name {
+    opacity: 0.45;
 }
 
 @media (max-width: 420px) {
     .notes-category-label {
         font-size: 0.64rem;
+    }
+
+    .notes-section {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .notes-row {
+        min-height: 8.8rem;
+    }
+
+    .notes-card-thumb {
+        aspect-ratio: 3 / 4;
     }
 }

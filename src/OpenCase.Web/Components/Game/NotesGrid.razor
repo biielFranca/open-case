@@ -64,6 +64,9 @@
                         class="notes-row @(IsMarked(card.Id) ? "marked" : "")"
                         data-card-id="@card.Id"
                         @onclick="() => OnToggle.InvokeAsync(card.Id)">
+                    <span class="notes-card-thumb" aria-hidden="true">
+                        <img src="@CardVisuals.ImageFor(card)" alt="" />
+                    </span>
                     <span class="notes-card-name">@card.Name</span>
                     <span class="notes-mark">@(IsMarked(card.Id) ? "X" : "")</span>
                 </button>

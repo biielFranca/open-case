@@ -4,11 +4,20 @@
     <div class="modal accusation-modal">
         <h3>Acusação final</h3>
         <p>Ninguém refutou seu palpite. Você pode encerrar o caso com esta acusação:</p>
-        <ul class="accusation-summary">
-            <li><strong>Suspeito:</strong> @SuspectName</li>
-            <li><strong>Local:</strong> @LocationName</li>
-            <li><strong>Arma:</strong> @WeaponName</li>
-        </ul>
+        <div class="accusation-summary">
+            @if (SuspectCard is not null)
+            {
+                @RenderSummaryCard(SuspectCard)
+            }
+            @if (LocationCard is not null)
+            {
+                @RenderSummaryCard(LocationCard)
+            }
+            @if (WeaponCard is not null)
+            {
+                @RenderSummaryCard(WeaponCard)
+            }
+        </div>
         <p class="panel-hint">Se errar, você perde o próximo turno e a solução continua secreta.</p>
         <div class="modal-actions">
             <button type="button" class="secondary-button" @onclick="() => OnCancel.InvokeAsync()">Ainda não</button>
@@ -18,9 +27,21 @@
 </div>
 
 @code {
-    [Parameter] public string SuspectName { get; set; } = string.Empty;
-    [Parameter] public string LocationName { get; set; } = string.Empty;
-    [Parameter] public string WeaponName { get; set; } = string.Empty;
+    [Parameter] public CardDto? SuspectCard { get; set; }
+    [Parameter] public CardDto? LocationCard { get; set; }
+    [Parameter] public CardDto? WeaponCard { get; set; }
     [Parameter] public EventCallback OnConfirm { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    private static RenderFragment RenderSummaryCard(CardDto card) => __builder =>
+    {
+        <article class="modal-card modal-card-readonly accusation-card card-@card.Type.ToLowerInvariant()">
+            <span class="modal-card-art" aria-hidden="true">
+                <img src="@CardVisuals.ImageFor(card)" alt="" />
+            </span>
+            <span class="modal-card-shade" aria-hidden="true"></span>
+            <span class="modal-card-type">@CardVisuals.TypeLabel(card.Type)</span>
+            <span class="modal-card-name">@card.Name</span>
+        </article>
+    };
 }

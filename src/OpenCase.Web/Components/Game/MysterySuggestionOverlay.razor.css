@@ -1,0 +1,273 @@
+.mystery-suggestion-overlay {
+    position: fixed;
+    z-index: 34;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    animation: mystery-overlay-life 4.2s ease-out both;
+}
+
+.mystery-vignette,
+.mystery-light,
+.mystery-fog,
+.mystery-cards,
+.mystery-card,
+.mystery-symbol {
+    position: absolute;
+    display: block;
+}
+
+.mystery-vignette {
+    inset: -8%;
+    background:
+        radial-gradient(circle at 50% 38%, transparent 0 22%, rgba(0, 0, 0, 0.22) 46%, rgba(0, 0, 0, 0.78) 100%),
+        linear-gradient(115deg, rgba(18, 31, 24, 0.1), rgba(5, 8, 7, 0.52));
+    animation: mystery-vignette-breathe 4.2s ease-out both;
+}
+
+.mystery-light {
+    top: -18%;
+    left: 50%;
+    width: min(42rem, 78vw);
+    height: min(42rem, 78vw);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(224, 196, 104, 0.28) 0 4%, rgba(224, 196, 104, 0.12) 18%, transparent 58%);
+    filter: blur(0.35rem);
+    transform: translateX(-50%) scale(0.6);
+    animation: mystery-light-drop 3.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.mystery-fog {
+    width: 78vw;
+    height: 18rem;
+    border-radius: 50%;
+    background:
+        radial-gradient(ellipse at center, rgba(195, 220, 200, 0.16), rgba(56, 76, 62, 0.08) 42%, transparent 72%);
+    filter: blur(1rem);
+    opacity: 0;
+}
+
+.mystery-fog-a {
+    bottom: 10%;
+    left: -22%;
+    animation: mystery-fog-drift-a 4.2s ease-out both;
+}
+
+.mystery-fog-b {
+    top: 16%;
+    right: -28%;
+    animation: mystery-fog-drift-b 4.2s ease-out 120ms both;
+}
+
+.mystery-cards {
+    inset: 0;
+    pointer-events: none;
+}
+
+.mystery-card {
+    top: 50%;
+    left: 50%;
+    width: clamp(5.4rem, 10vw, 8.6rem);
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border: 1px solid rgba(238, 211, 118, 0.76);
+    border-radius: 0.65rem;
+    background: linear-gradient(145deg, rgba(24, 36, 28, 0.95), rgba(5, 8, 7, 0.96));
+    box-shadow:
+        0 1.1rem 2.4rem rgba(0, 0, 0, 0.58),
+        0 0 1.6rem rgba(224, 196, 104, 0.32),
+        inset 0 0 0.75rem #000b;
+    opacity: 0;
+    transform-origin: center;
+}
+
+.mystery-card img {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.92) contrast(1.1) brightness(0.82);
+}
+
+.mystery-card.card-weapon img {
+    object-fit: contain;
+    padding: 0.55rem;
+    background: radial-gradient(circle at 50% 42%, rgba(80, 104, 79, 0.9), rgba(8, 15, 11, 0.98) 72%);
+}
+
+.mystery-card span,
+.mystery-card strong {
+    position: absolute;
+    right: 0.42rem;
+    left: 0.42rem;
+    z-index: 3;
+    text-shadow: 0 1px 0 #000, 0 0 0.6rem #000;
+}
+
+.mystery-card span {
+    top: 0.45rem;
+    color: #e8cb70;
+    font-size: clamp(0.48rem, 0.72vw, 0.62rem);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.mystery-card strong {
+    bottom: 0.45rem;
+    color: #fff8e8;
+    font-size: clamp(0.58rem, 0.9vw, 0.78rem);
+    line-height: 1.05;
+}
+
+.mystery-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 28%, rgba(2, 4, 3, 0.9) 100%),
+        radial-gradient(circle at 50% 42%, transparent 0 34%, rgba(0, 0, 0, 0.42) 100%);
+}
+
+.mystery-card-1 {
+    animation: mystery-card-one 3.3s cubic-bezier(0.18, 0.8, 0.24, 1) 160ms both;
+}
+
+.mystery-card-2 {
+    animation: mystery-card-two 3.3s cubic-bezier(0.18, 0.8, 0.24, 1) 230ms both;
+}
+
+.mystery-card-3 {
+    animation: mystery-card-three 3.3s cubic-bezier(0.18, 0.8, 0.24, 1) 300ms both;
+}
+
+.mystery-symbol {
+    color: rgba(224, 196, 104, 0.34);
+    font-family: Georgia, serif;
+    font-size: clamp(5rem, 12vw, 11rem);
+    font-weight: 900;
+    text-shadow: 0 0 1.4rem rgba(224, 196, 104, 0.34);
+    opacity: 0;
+}
+
+.mystery-symbol-left {
+    left: 8%;
+    top: 18%;
+    animation: mystery-symbol-float 3.6s ease-out 280ms both;
+}
+
+.mystery-symbol-right {
+    right: 10%;
+    bottom: 12%;
+    animation: mystery-symbol-float 3.6s ease-out 420ms both reverse;
+}
+
+.mystery-message {
+    position: absolute;
+    left: 50%;
+    top: 17%;
+    display: flex;
+    width: min(42rem, calc(100vw - 2rem));
+    flex-direction: column;
+    align-items: center;
+    gap: 0.28rem;
+    border: 1px solid rgba(224, 196, 104, 0.42);
+    background: linear-gradient(145deg, rgba(12, 20, 15, 0.78), rgba(5, 8, 7, 0.52));
+    box-shadow: 0 0.8rem 2rem #0008, 0 0 1.4rem rgba(224, 196, 104, 0.22);
+    color: #eadfca;
+    padding: 0.72rem 1rem;
+    text-align: center;
+    transform: translateX(-50%) translateY(-1rem);
+    opacity: 0;
+    animation: mystery-message-arrive 3.4s ease-out 240ms both;
+}
+
+.mystery-message span {
+    color: #d8bb63;
+    font-size: clamp(0.62rem, 1.1vw, 0.78rem);
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.mystery-message strong {
+    font-size: clamp(0.95rem, 1.8vw, 1.45rem);
+    line-height: 1.1;
+    text-shadow: 0 1px 0 #000;
+}
+
+@keyframes mystery-overlay-life {
+    0% { opacity: 0; }
+    8% { opacity: 1; }
+    72% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@keyframes mystery-vignette-breathe {
+    0% { transform: scale(1.08); }
+    55% { transform: scale(1); }
+    100% { transform: scale(1.04); }
+}
+
+@keyframes mystery-light-drop {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-12%) scale(0.48); }
+    26% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-50%) translateY(24%) scale(1.45); }
+}
+
+@keyframes mystery-fog-drift-a {
+    0% { opacity: 0; transform: translateX(-12%) translateY(1rem) scale(0.8); }
+    18%, 70% { opacity: 0.9; }
+    100% { opacity: 0; transform: translateX(30%) translateY(-1rem) scale(1.18); }
+}
+
+@keyframes mystery-fog-drift-b {
+    0% { opacity: 0; transform: translateX(10%) translateY(-0.5rem) scale(0.8); }
+    18%, 70% { opacity: 0.75; }
+    100% { opacity: 0; transform: translateX(-28%) translateY(1.1rem) scale(1.2); }
+}
+
+@keyframes mystery-card-one {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(-28deg) scale(0.6); }
+    20%, 68% { opacity: 0.96; }
+    100% { opacity: 0; transform: translate(calc(-50% - 9rem), calc(-50% + 1.2rem)) rotate(-14deg) scale(1.06); }
+}
+
+@keyframes mystery-card-two {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(12deg) scale(0.6); }
+    20%, 68% { opacity: 0.96; }
+    100% { opacity: 0; transform: translate(-50%, calc(-50% - 0.4rem)) rotate(2deg) scale(1.1); }
+}
+
+@keyframes mystery-card-three {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(28deg) scale(0.6); }
+    20%, 68% { opacity: 0.96; }
+    100% { opacity: 0; transform: translate(calc(-50% + 9rem), calc(-50% + 1.2rem)) rotate(14deg) scale(1.06); }
+}
+
+@keyframes mystery-symbol-float {
+    0% { opacity: 0; transform: translateY(0.8rem) rotate(-8deg) scale(0.9); }
+    24%, 64% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-1.4rem) rotate(8deg) scale(1.08); }
+}
+
+@keyframes mystery-message-arrive {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-1rem) scale(0.96); }
+    20%, 70% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-0.35rem) scale(1.02); }
+}
+
+@media (max-width: 720px) {
+    .mystery-message {
+        top: 11%;
+    }
+
+    .mystery-card {
+        width: clamp(4.1rem, 19vw, 5.8rem);
+    }
+}

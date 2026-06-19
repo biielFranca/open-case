@@ -47,9 +47,9 @@ public class PersistenceTests : IDisposable
     {
         await DataSeeder.SeedAsync(_context);
 
-        Assert.Equal(8, await _context.Cards.CountAsync(c => c.Type == CardType.Suspect));
+        Assert.Equal(12, await _context.Cards.CountAsync(c => c.Type == CardType.Suspect));
         Assert.Equal(12, await _context.Cards.CountAsync(c => c.Type == CardType.Location));
-        Assert.Equal(8, await _context.Cards.CountAsync(c => c.Type == CardType.Weapon));
+        Assert.Equal(12, await _context.Cards.CountAsync(c => c.Type == CardType.Weapon));
         Assert.Equal(12, await _context.Pawns.CountAsync());
 
         var template = await _context.BoardTemplates.SingleAsync();
@@ -62,7 +62,7 @@ public class PersistenceTests : IDisposable
         await DataSeeder.SeedAsync(_context);
         await DataSeeder.SeedAsync(_context);
 
-        Assert.Equal(28, await _context.Cards.CountAsync());
+        Assert.Equal(36, await _context.Cards.CountAsync());
         Assert.Equal(12, await _context.Pawns.CountAsync());
         Assert.Equal(1, await _context.BoardTemplates.CountAsync());
     }

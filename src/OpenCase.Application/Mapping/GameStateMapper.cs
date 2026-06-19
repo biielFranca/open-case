@@ -71,7 +71,8 @@ public static class GameStateMapper
 
     public static CardDto ToCardDto(Card card) => new(card.Id, card.Type.ToString(), card.Name);
 
-    public static PublicHintDto ToPublicHintDto(Hint hint) => new(hint.Id, hint.Type.ToString(), hint.Text);
+    public static PublicHintDto ToPublicHintDto(Hint hint) =>
+        new(hint.Id, hint.Type.ToString(), hint.Delivery, hint.Text, hint.TargetPlayerId);
 
     public static PrivateHintDto ToPrivateHintDto(Hint hint) => new(hint.Id, hint.Text);
 }

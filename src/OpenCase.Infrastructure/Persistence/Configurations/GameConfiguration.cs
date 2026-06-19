@@ -62,6 +62,7 @@ public class HintConfiguration : IEntityTypeConfiguration<Hint>
     {
         builder.HasKey(h => h.Id);
         builder.Property(h => h.Type).HasConversion<string>().HasMaxLength(20);
+        builder.Property(h => h.Delivery).HasMaxLength(20);
         builder.Property(h => h.Text).HasMaxLength(500);
     }
 }

@@ -41,7 +41,37 @@ public class HintServiceTests
         Assert.Equal(HintType.Private, hint.Type);
         Assert.NotNull(hint.TargetPlayerId);
         Assert.Contains(hint.TargetPlayerId!.Value, _game.TurnState.TurnOrder);
+        AssertValidDelivery(hint.Delivery);
         Assert.False(string.IsNullOrWhiteSpace(hint.Text));
+    }
+
+    [Fact]
+    public void GeneratePrivateHint_CanTargetRequester()
+    {
+        var requesterId = _game.Hands[0].PlayerId;
+
+        var hint = _service.GeneratePrivateHint(_game, requesterId);
+
+        Assert.Equal(HintType.Private, hint.Type);
+        Assert.Equal(requesterId, hint.TargetPlayerId);
+        AssertValidDelivery(hint.Delivery);
+        Assert.False(string.IsNullOrWhiteSpace(hint.Text));
+    }
+
+    [Fact]
+    public void GenerateDistributedHint_TargetsOneEligiblePlayer()
+    {
+        var eligible = _game.Hands.Take(2).Select(hand => hand.PlayerId).ToList();
+
+        for (var i = 0; i < 40; i++)
+        {
+            var hint = _service.GenerateDistributedHint(_game, eligible);
+
+            Assert.NotNull(hint.TargetPlayerId);
+            Assert.Contains(hint.TargetPlayerId!.Value, eligible);
+            AssertValidDelivery(hint.Delivery);
+            Assert.True(hint.Type is HintType.Private or HintType.Noise);
+        }
     }
 
     [Fact]
@@ -51,6 +81,7 @@ public class HintServiceTests
 
         Assert.Equal(HintType.Public, hint.Type);
         Assert.Null(hint.TargetPlayerId);
+        AssertValidDelivery(hint.Delivery);
     }
 
     [Fact]
@@ -62,6 +93,7 @@ public class HintServiceTests
 
             Assert.Equal(HintType.Noise, hint.Type);
             Assert.Null(hint.TargetPlayerId);
+            AssertValidDelivery(hint.Delivery);
             Assert.All(_game.AllCards, card => Assert.DoesNotContain(card.Name, hint.Text));
         }
     }
@@ -110,4 +142,7 @@ public class HintServiceTests
             Assert.Contains(_service.PickRandomTargetPlayer(_game), _game.TurnState.TurnOrder);
         }
     }
+
+    private static void AssertValidDelivery(string delivery) =>
+        Assert.True(delivery is "Text" or "Audio", $"Unexpected delivery mode: {delivery}");
 }

@@ -1,0 +1,203 @@
+@using OpenCase.Shared.Dtos
+@implements IDisposable
+
+@if (ShouldShowNotice)
+{
+    <section class="case-action-toast @NoticeClass" @key="NoticeKey" aria-live="polite">
+        <div class="case-action-copy">
+            <span class="case-action-kicker">@Kicker</span>
+            <strong>@Title</strong>
+            <span>@Subtitle</span>
+        </div>
+        <div class="case-action-cards" aria-label="Cartas do palpite">
+            @foreach (var card in SuggestedCards)
+            {
+                <article class="case-action-card card-@card.Type.ToLowerInvariant()">
+                    <img src="@CardVisuals.ImageFor(card)" alt="" />
+                    <span>@CardVisuals.TypeLabel(card.Type)</span>
+                    <strong>@card.Name</strong>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public SuggestionDto? Suggestion { get; set; }
+    [Parameter] public PublicRefutationDto? Refutation { get; set; }
+    [Parameter] public IReadOnlyList<CardDto> AllCards { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, string> PlayerNames { get; set; } =
+        new Dictionary<Guid, string>();
+    [Parameter] public TimeSpan AutoHideAfter { get; set; } = TimeSpan.FromSeconds(5);
+
+    private CancellationTokenSource? _autoHideCts;
+    private string? _activeNoticeKey;
+    private bool _isHidden;
+
+    protected override void OnParametersSet()
+    {
+        var nextNoticeKey = Suggestion is not null && SuggestedCards.Count == 3
+            ? NoticeKey
+            : null;
+
+        if (nextNoticeKey is null)
+        {
+            ResetNotice();
+            return;
+        }
+
+        if (_activeNoticeKey == nextNoticeKey)
+        {
+            return;
+        }
+
+        _activeNoticeKey = nextNoticeKey;
+        _isHidden = false;
+        StartAutoHideTimer(nextNoticeKey);
+    }
+
+    private bool ShouldShowNotice =>
+        Suggestion is not null
+        && SuggestedCards.Count == 3
+        && !_isHidden;
+
+    private List<CardDto> SuggestedCards =>
+        Suggestion is null
+            ? []
+            : [.. new[]
+                {
+                    CardById(Suggestion.SuspectCardId),
+                    CardById(Suggestion.LocationCardId),
+                    CardById(Suggestion.WeaponCardId),
+                }.OfType<CardDto>()];
+
+    private string NoticeKey =>
+        Suggestion is null
+            ? string.Empty
+            : $"{Suggestion.Id}:{Refutation?.CurrentRefutingPlayerId}:{Refutation?.RefutedByPlayerId}:{Refutation?.IsResolved}:{Refutation?.AllPlayersPassed}";
+
+    private string NoticeClass
+    {
+        get
+        {
+            if (Refutation is null)
+            {
+                return "suggestion";
+            }
+
+            if (Refutation.RefutedByPlayerId is not null)
+            {
+                return "refuted";
+            }
+
+            return Refutation.AllPlayersPassed ? "unrefuted" : "refutation";
+        }
+    }
+
+    private string Kicker => NoticeClass switch
+    {
+        "refutation" => "Refutação",
+        "refuted" => "Palpite refutado",
+        "unrefuted" => "Sem refutação",
+        _ => "Palpite lançado",
+    };
+
+    private string Title
+    {
+        get
+        {
+            if (Suggestion is null)
+            {
+                return string.Empty;
+            }
+
+            if (Refutation?.CurrentRefutingPlayerId is Guid refutingPlayerId)
+            {
+                return $"{PlayerName(refutingPlayerId)} precisa responder";
+            }
+
+            if (Refutation?.RefutedByPlayerId is Guid refutedByPlayerId)
+            {
+                return $"{PlayerName(refutedByPlayerId)} mostrou uma carta";
+            }
+
+            if (Refutation?.AllPlayersPassed == true)
+            {
+                return "Ninguém conseguiu refutar";
+            }
+
+            return $"{PlayerName(Suggestion.SuggestingPlayerId)} fez um palpite";
+        }
+    }
+
+    private string Subtitle =>
+        Suggestion is null
+            ? string.Empty
+            : NoticeClass switch
+            {
+                "refuted" => $"Só {PlayerName(Suggestion.SuggestingPlayerId)} vê a carta revelada.",
+                "unrefuted" => $"{PlayerName(Suggestion.SuggestingPlayerId)} pode partir para a acusação final.",
+                "refutation" => $"Palpite de {PlayerName(Suggestion.SuggestingPlayerId)} em andamento.",
+                _ => "As três cartas entram em suspeita.",
+            };
+
+    private CardDto? CardById(Guid cardId) =>
+        AllCards.FirstOrDefault(card => card.Id == cardId);
+
+    private string PlayerName(Guid playerId) =>
+        PlayerNames.GetValueOrDefault(playerId, "Investigador");
+
+    private void StartAutoHideTimer(string noticeKey)
+    {
+        CancelAutoHideTimer();
+
+        if (AutoHideAfter <= TimeSpan.Zero)
+        {
+            _isHidden = true;
+            return;
+        }
+
+        _autoHideCts = new CancellationTokenSource();
+        _ = HideNoticeAfterDelayAsync(noticeKey, _autoHideCts.Token);
+    }
+
+    private async Task HideNoticeAfterDelayAsync(string noticeKey, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(AutoHideAfter, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            if (token.IsCancellationRequested || _activeNoticeKey != noticeKey)
+            {
+                return;
+            }
+
+            _isHidden = true;
+            StateHasChanged();
+        });
+    }
+
+    private void ResetNotice()
+    {
+        _activeNoticeKey = null;
+        _isHidden = false;
+        CancelAutoHideTimer();
+    }
+
+    private void CancelAutoHideTimer()
+    {
+        _autoHideCts?.Cancel();
+        _autoHideCts?.Dispose();
+        _autoHideCts = null;
+    }
+
+    public void Dispose() =>
+        CancelAutoHideTimer();
+}

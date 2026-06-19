@@ -8,6 +8,7 @@ public class Hint
     public Guid GameId { get; set; }
     public HintType Type { get; set; }
     public Guid? TargetPlayerId { get; set; }
+    public string Delivery { get; set; } = "Text";
     public string Text { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

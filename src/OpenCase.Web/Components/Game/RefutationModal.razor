@@ -3,14 +3,29 @@
 <div class="modal-backdrop">
     <div class="modal refutation-modal">
         <h3>Refutação</h3>
+        @if (CitedCards.Count > 0)
+        {
+            <p>Cartas citadas no palpite:</p>
+            <div class="modal-card-grid modal-card-grid-compact">
+                @foreach (var card in CitedCards)
+                {
+                    <article class="modal-card modal-card-readonly card-@card.Type.ToLowerInvariant()">
+                        @RenderCardArt(card)
+                    </article>
+                }
+            </div>
+        }
+
         @if (AvailableCards.Count > 0)
         {
             <p>Você tem carta compatível e precisa mostrar uma ao acusador:</p>
             <div class="modal-card-grid">
                 @foreach (var card in AvailableCards)
                 {
-                    <button type="button" data-card-id="@card.Id" class="modal-card"
-                            @onclick="() => OnShowCard.InvokeAsync(card.Id)">@card.Name</button>
+                    <button type="button" data-card-id="@card.Id" class="modal-card card-@card.Type.ToLowerInvariant()"
+                            @onclick="() => OnShowCard.InvokeAsync(card.Id)">
+                        @RenderCardArt(card)
+                    </button>
                 }
             </div>
         }
@@ -23,7 +38,18 @@
 </div>
 
 @code {
+    [Parameter] public List<CardDto> CitedCards { get; set; } = [];
     [Parameter] public List<CardDto> AvailableCards { get; set; } = [];
     [Parameter] public EventCallback<Guid> OnShowCard { get; set; }
     [Parameter] public EventCallback OnPass { get; set; }
+
+    private static RenderFragment RenderCardArt(CardDto card) => __builder =>
+    {
+        <span class="modal-card-art" aria-hidden="true">
+            <img src="@CardVisuals.ImageFor(card)" alt="" />
+        </span>
+        <span class="modal-card-shade" aria-hidden="true"></span>
+        <span class="modal-card-type">@CardVisuals.TypeLabel(card.Type)</span>
+        <span class="modal-card-name">@card.Name</span>
+    };
 }

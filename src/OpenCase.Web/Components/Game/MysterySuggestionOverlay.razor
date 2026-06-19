@@ -1,0 +1,57 @@
+@using OpenCase.Shared.Dtos
+
+@if (Suggestion is not null)
+{
+    <section @key="Suggestion.Id" class="mystery-suggestion-overlay" aria-hidden="true">
+        <span class="mystery-vignette"></span>
+        <span class="mystery-light"></span>
+        <span class="mystery-fog mystery-fog-a"></span>
+        <span class="mystery-fog mystery-fog-b"></span>
+        @if (SuggestedCards.Count == 3)
+        {
+            <div class="mystery-cards" aria-label="Cartas do palpite">
+                @{
+                    var cardIndex = 0;
+                }
+                @foreach (var card in SuggestedCards)
+                {
+                    cardIndex++;
+                    <article class="mystery-card mystery-card-@cardIndex card-@card.Type.ToLowerInvariant()">
+                        <img src="@CardVisuals.ImageFor(card)" alt="" />
+                        <span>@CardVisuals.TypeLabel(card.Type)</span>
+                        <strong>@card.Name</strong>
+                    </article>
+                }
+            </div>
+        }
+        <span class="mystery-symbol mystery-symbol-left">?</span>
+        <span class="mystery-symbol mystery-symbol-right">!</span>
+        <div class="mystery-message">
+            <span>Um palpite ecoa pela mansao</span>
+            <strong>@PlayerName(Suggestion.SuggestingPlayerId) mexeu nas cartas do caso</strong>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public SuggestionDto? Suggestion { get; set; }
+    [Parameter] public IReadOnlyList<CardDto> AllCards { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, string> PlayerNames { get; set; } =
+        new Dictionary<Guid, string>();
+
+    private List<CardDto> SuggestedCards =>
+        Suggestion is null
+            ? []
+            : [.. new[]
+                {
+                    CardById(Suggestion.SuspectCardId),
+                    CardById(Suggestion.LocationCardId),
+                    CardById(Suggestion.WeaponCardId),
+                }.OfType<CardDto>()];
+
+    private CardDto? CardById(Guid cardId) =>
+        AllCards.FirstOrDefault(card => card.Id == cardId);
+
+    private string PlayerName(Guid playerId) =>
+        PlayerNames.GetValueOrDefault(playerId, "Um investigador");
+}

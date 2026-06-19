@@ -1,7 +1,7 @@
 @using OpenCase.Shared.Dtos
 @using OpenCase.Web.Components.Lobby
 
-<article class="game-player-seat seat-@SeatNumber @(IsCurrentTurn ? "current-turn" : "") @(IsMe ? "is-me" : "")"
+<article class="game-player-seat seat-@SeatNumber @(IsCurrentTurn ? "current-turn" : "") @(IsMe ? "is-me" : "") @(IsSuggesting ? "is-suggesting" : "") @(IsRefuting ? "is-refuting" : "") @(DidRefute ? "did-refute" : "")"
          style="--pawn-color:@(Pawn?.Color ?? "#53645b")">
     <div class="game-player-avatar">
         <img src="@CharacterVisuals.ImageFor(Pawn?.Name)" alt="" />
@@ -19,6 +19,18 @@
     {
         <span class="game-player-turn">Você</span>
     }
+    @if (IsRefuting)
+    {
+        <span class="game-player-action">Refutando</span>
+    }
+    else if (DidRefute)
+    {
+        <span class="game-player-action">Refutou</span>
+    }
+    else if (IsSuggesting)
+    {
+        <span class="game-player-action">Palpite</span>
+    }
 </article>
 
 @code {
@@ -27,4 +39,7 @@
     [Parameter] public int SeatNumber { get; set; }
     [Parameter] public bool IsCurrentTurn { get; set; }
     [Parameter] public bool IsMe { get; set; }
+    [Parameter] public bool IsSuggesting { get; set; }
+    [Parameter] public bool IsRefuting { get; set; }
+    [Parameter] public bool DidRefute { get; set; }
 }

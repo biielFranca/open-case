@@ -4,13 +4,22 @@
     <div class="modal suggestion-modal">
         <h3>Dar palpite em <span class="logo-accent">@LocationName</span></h3>
 
+        @if (LocationCard is not null)
+        {
+            <div class="suggestion-location-card modal-card modal-card-readonly card-@LocationCard.Type.ToLowerInvariant()">
+                @RenderCardArt(LocationCard)
+            </div>
+        }
+
         <h4>Quem?</h4>
         <div class="modal-card-grid">
             @foreach (var suspect in Suspects)
             {
                 <button type="button" data-card-id="@suspect.Id"
-                        class="modal-card @(suspect.Id == _suspectId ? "selected" : "")"
-                        @onclick="() => _suspectId = suspect.Id">@suspect.Name</button>
+                        class="modal-card card-@suspect.Type.ToLowerInvariant() @(suspect.Id == _suspectId ? "selected" : "")"
+                        @onclick="() => _suspectId = suspect.Id">
+                    @RenderCardArt(suspect)
+                </button>
             }
         </div>
 
@@ -19,8 +28,10 @@
             @foreach (var weapon in Weapons)
             {
                 <button type="button" data-card-id="@weapon.Id"
-                        class="modal-card @(weapon.Id == _weaponId ? "selected" : "")"
-                        @onclick="() => _weaponId = weapon.Id">@weapon.Name</button>
+                        class="modal-card card-@weapon.Type.ToLowerInvariant() @(weapon.Id == _weaponId ? "selected" : "")"
+                        @onclick="() => _weaponId = weapon.Id">
+                    @RenderCardArt(weapon)
+                </button>
             }
         </div>
 
@@ -37,6 +48,7 @@
     [Parameter] public List<CardDto> Suspects { get; set; } = [];
     [Parameter] public List<CardDto> Weapons { get; set; } = [];
     [Parameter] public string LocationName { get; set; } = string.Empty;
+    [Parameter] public CardDto? LocationCard { get; set; }
     [Parameter] public EventCallback<(Guid SuspectId, Guid WeaponId)> OnConfirm { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
@@ -44,4 +56,14 @@
     private Guid? _weaponId;
 
     private Task ConfirmAsync() => OnConfirm.InvokeAsync((_suspectId!.Value, _weaponId!.Value));
+
+    private static RenderFragment RenderCardArt(CardDto card) => __builder =>
+    {
+        <span class="modal-card-art" aria-hidden="true">
+            <img src="@CardVisuals.ImageFor(card)" alt="" />
+        </span>
+        <span class="modal-card-shade" aria-hidden="true"></span>
+        <span class="modal-card-type">@CardVisuals.TypeLabel(card.Type)</span>
+        <span class="modal-card-name">@card.Name</span>
+    };
 }

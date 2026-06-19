@@ -22,6 +22,10 @@
         var state = Client.GameState;
         var isMyTurn = state.Turn.CurrentPlayerId == Client.MyPlayerId;
 
+        <MysterySuggestionOverlay Suggestion="state.ActiveSuggestion"
+                                  AllCards="_knownCards"
+                                  PlayerNames="PlayerNames" />
+
         <main class="game-hub">
             <section class="game-table" aria-label="Mesa da investigação">
                 <div class="game-player-ring">
@@ -32,7 +36,10 @@
                                         Pawn="@PawnOf(player)"
                                         SeatNumber="@(index + 1)"
                                         IsCurrentTurn="@(state.Turn.CurrentPlayerId == player.Id)"
-                                        IsMe="@(Client.MyPlayerId == player.Id)" />
+                                        IsMe="@(Client.MyPlayerId == player.Id)"
+                                        IsSuggesting="@(state.ActiveSuggestion?.SuggestingPlayerId == player.Id)"
+                                        IsRefuting="@(state.ActiveRefutation?.CurrentRefutingPlayerId == player.Id)"
+                                        DidRefute="@(state.ActiveRefutation?.RefutedByPlayerId == player.Id)" />
                     }
                 </div>
 
@@ -47,6 +54,11 @@
                                    ReachableDestinations="LegalMovePaths.Keys"
                                    OnCellClick="HandleCellClick" />
                     </div>
+
+                    <CaseActionToast Suggestion="state.ActiveSuggestion"
+                                     Refutation="state.ActiveRefutation"
+                                     AllCards="_knownCards"
+                                     PlayerNames="PlayerNames" />
 
                     @if (_selectedPath.Count > 0)
                     {
@@ -76,13 +88,18 @@
                         {
                             <button class="game-event" @onclick="Client.ClearPrivateCard">
                                 <strong>Carta revelada</strong>
-                                <span>@PlayerNames.GetValueOrDefault(Client.LastPrivateCard.ShownByPlayerId, "?") mostrou @Client.LastPrivateCard.Card.Name</span>
+                                <span class="game-event-card-row">
+                                    <span class="game-event-card-thumb" aria-hidden="true">
+                                        <img src="@CardVisuals.ImageFor(Client.LastPrivateCard.Card)" alt="" />
+                                    </span>
+                                    <span>@PlayerNames.GetValueOrDefault(Client.LastPrivateCard.ShownByPlayerId, "?") mostrou @Client.LastPrivateCard.Card.Name</span>
+                                </span>
                             </button>
                         }
                         else if (Client.LastHint is not null)
                         {
                             <button class="game-event" @onclick="Client.ClearHint">
-                                <strong>Nova pista</strong>
+                                <strong>@HintTitle(Client.LastHint.Type)</strong>
                                 <span>@Client.LastHint.Text</span>
                             </button>
                         }
@@ -114,6 +131,20 @@
                         <button type="button" class="action-tile notes-action" @onclick="() => _showNotes = !_showNotes">
                             <span class="action-icon action-icon-notes" aria-hidden="true"></span>
                             Bloco de notas
+                        </button>
+
+                        <button type="button" class="action-tile hint-action"
+                                data-has-hint="@HasUnreadHint"
+                                @onclick="HandlePhoneClick">
+                            <span class="action-icon action-icon-phone" aria-hidden="true">
+                                <span class="phone-speaker"></span>
+                                <span class="phone-screen"></span>
+                            </span>
+                            <span>@PhoneLabel</span>
+                            @if (HasUnreadHint)
+                            {
+                                <span class="phone-badge" aria-hidden="true">1</span>
+                            }
                         </button>
 
                         @if (state.Turn.TurnOrder.Count == 0)
@@ -166,22 +197,24 @@
             <SuggestionModal Suspects="SuspectCards"
                              Weapons="WeaponCards"
                              LocationName="@CurrentLocationName"
+                             LocationCard="CurrentLocationCard"
                              OnConfirm="ConfirmSuggestionAsync"
                              OnCancel="() => _showSuggestionModal = false" />
         }
 
-        @if (NeedsMyRefutation)
+        @if (ShouldShowRefutationChoices)
         {
-            <RefutationModal AvailableCards="MyRefutableCards"
+            <RefutationModal CitedCards="ActiveSuggestionCards"
+                             AvailableCards="MyRefutableCards"
                              OnShowCard="ShowRefutationCardAsync"
                              OnPass="Client.PassRefutationAsync" />
         }
 
         @if (_showAccusationModal && state.ActiveSuggestion is not null)
         {
-            <FinalAccusationModal SuspectName="@CardName(state.ActiveSuggestion.SuspectCardId)"
-                                  LocationName="@CardName(state.ActiveSuggestion.LocationCardId)"
-                                  WeaponName="@CardName(state.ActiveSuggestion.WeaponCardId)"
+            <FinalAccusationModal SuspectCard="@CardById(state.ActiveSuggestion.SuspectCardId)"
+                                  LocationCard="@CardById(state.ActiveSuggestion.LocationCardId)"
+                                  WeaponCard="@CardById(state.ActiveSuggestion.WeaponCardId)"
                                   OnConfirm="ConfirmAccusationAsync"
                                   OnCancel="() => _showAccusationModal = false" />
         }
@@ -192,6 +225,12 @@
                                ShownByName="@PlayerNames.GetValueOrDefault(Client.LastPrivateCard.ShownByPlayerId, "Alguém")"
                                OnDismiss="Client.ClearPrivateCard" />
         }
+
+        @if (Client.LastHint is not null)
+        {
+            <HintPopup Hint="Client.LastHint"
+                       OnClose="Client.ClearHint" />
+        }
     }
 </div>
 
@@ -200,6 +239,10 @@
     private readonly Dictionary<Guid, bool> _notes = [];
     private readonly List<PawnDto> _pawns =
         [.. RoomService.AvailablePawns.Select(p => new PawnDto(p.Id, p.Name, p.Color))];
+    private static readonly TimeSpan SuggestionAnimationDuration = TimeSpan.FromMilliseconds(4200);
+    private CancellationTokenSource? _suggestionAnimationDelayCts;
+    private Guid? _animatedSuggestionId;
+    private Guid? _finishedSuggestionAnimationId;
     private bool _showSuggestionModal;
     private bool _showAccusationModal;
     private bool _showNotes;
@@ -212,7 +255,14 @@
         Client.OnChange += HandleChange;
     }
 
-    private void HandleChange() => _ = InvokeAsync(StateHasChanged);
+    protected override void OnAfterRender(bool firstRender) =>
+        TrackSuggestionAnimation();
+
+    private void HandleChange() => _ = InvokeAsync(() =>
+    {
+        TrackSuggestionAnimation();
+        StateHasChanged();
+    });
 
     private Dictionary<Guid, string> PlayerNames =>
         Client.Room?.Players.ToDictionary(p => p.Id, p => p.Name) ?? [];
@@ -237,6 +287,19 @@
     private List<CardDto> SuspectCards => CardsOf("Suspect");
     private List<CardDto> LocationCards => CardsOf("Location");
     private List<CardDto> WeaponCards => CardsOf("Weapon");
+
+    private CardDto? CurrentLocationCard =>
+        LocationCards.FirstOrDefault(card => card.Name == CurrentLocationName);
+
+    private List<CardDto> ActiveSuggestionCards =>
+        Client.GameState?.ActiveSuggestion is not { } suggestion
+            ? []
+            : [.. new[]
+                {
+                    CardById(suggestion.SuspectCardId),
+                    CardById(suggestion.LocationCardId),
+                    CardById(suggestion.WeaponCardId),
+                }.OfType<CardDto>()];
 
     private IReadOnlyDictionary<PositionDto, List<PositionDto>> LegalMovePaths
     {
@@ -280,9 +343,23 @@
         && state.Turn.Phase is "RollDice" or "Move" or "Suggestion"
         && CurrentLocationName != "?";
 
+    private bool HasUnreadHint => Client.LastHint is not null;
+
+    private string PhoneLabel =>
+        Client.LastHint is null
+            ? "Celular"
+            : Client.LastHint.Delivery == "Audio" ? "Audio recebido" : "Mensagem";
+
     private bool NeedsMyRefutation =>
         Client.GameState?.ActiveRefutation is { IsResolved: false } refutation
         && refutation.CurrentRefutingPlayerId == Client.MyPlayerId;
+
+    private bool HasSuggestionAnimationFinished =>
+        Client.GameState?.ActiveSuggestion is { } suggestion
+        && _finishedSuggestionAnimationId == suggestion.Id;
+
+    private bool ShouldShowRefutationChoices =>
+        NeedsMyRefutation && HasSuggestionAnimationFinished;
 
     private List<CardDto> MyRefutableCards
     {
@@ -299,8 +376,8 @@
         }
     }
 
-    private string CardName(Guid cardId) =>
-        _knownCards.FirstOrDefault(c => c.Id == cardId)?.Name ?? "?";
+    private CardDto? CardById(Guid cardId) =>
+        _knownCards.FirstOrDefault(c => c.Id == cardId);
 
     private void HandleCellClick(PositionDto position)
     {
@@ -334,11 +411,85 @@
         await Client.MakeFinalAccusationAsync();
     }
 
+    private void HandlePhoneClick()
+    {
+        if (Client.LastHint is not null)
+        {
+            Client.ClearHint();
+            return;
+        }
+    }
+
     private void ToggleNote(Guid cardId) =>
         _notes[cardId] = !_notes.GetValueOrDefault(cardId);
+
+    private static string HintTitle(string type) => type switch
+    {
+        "Private" => "Pista privada",
+        "Public" => "Pista publica",
+        "Noise" => "Rumor",
+        _ => "Nova pista",
+    };
+
+    private void TrackSuggestionAnimation()
+    {
+        var suggestionId = Client.GameState?.ActiveSuggestion?.Id;
+        if (suggestionId is null)
+        {
+            _animatedSuggestionId = null;
+            _finishedSuggestionAnimationId = null;
+            CancelSuggestionAnimationDelay();
+            return;
+        }
+
+        if (_animatedSuggestionId == suggestionId)
+        {
+            return;
+        }
+
+        _animatedSuggestionId = suggestionId;
+        _finishedSuggestionAnimationId = null;
+        CancelSuggestionAnimationDelay();
+
+        _suggestionAnimationDelayCts = new CancellationTokenSource();
+        _ = CompleteSuggestionAnimationAsync(suggestionId.Value, _suggestionAnimationDelayCts.Token);
+    }
+
+    private async Task CompleteSuggestionAnimationAsync(Guid suggestionId, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(SuggestionAnimationDuration, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            if (token.IsCancellationRequested
+                || _animatedSuggestionId != suggestionId
+                || Client.GameState?.ActiveSuggestion?.Id != suggestionId)
+            {
+                return;
+            }
+
+            _finishedSuggestionAnimationId = suggestionId;
+            StateHasChanged();
+        });
+    }
+
+    private void CancelSuggestionAnimationDelay()
+    {
+        _suggestionAnimationDelayCts?.Cancel();
+        _suggestionAnimationDelayCts?.Dispose();
+        _suggestionAnimationDelayCts = null;
+    }
 
     public void Dispose()
     {
         Client.OnChange -= HandleChange;
+        CancelSuggestionAnimationDelay();
     }
 }

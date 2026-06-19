@@ -72,7 +72,12 @@
     display: grid;
     place-items: center;
     width: 100%;
+    pointer-events: none;
     transform-style: preserve-3d;
+}
+
+.game-board-perspective ::deep .board-view {
+    pointer-events: auto;
 }
 
 .path-actions {
@@ -155,6 +160,32 @@ button.game-event {
 .game-event span {
     color: #9eaea3;
     font-size: 0.68rem;
+}
+
+.game-event-card-row {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.game-event-card-thumb {
+    position: relative;
+    display: block;
+    width: 2.35rem;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border: 1px solid #c9a227;
+    border-radius: 0.22rem;
+    background: #101713;
+    box-shadow: 0 0 0.45rem #0008;
+}
+
+.game-event-card-thumb img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
 }
 
 .game-event-error {
@@ -304,6 +335,16 @@ button.game-event {
     color: #f2e3be;
 }
 
+.action-tile:disabled {
+    cursor: not-allowed;
+    opacity: 0.46;
+}
+
+.action-tile:disabled:hover {
+    border-color: #52655a;
+    color: #d8d0be;
+}
+
 .action-tile-primary {
     border-color: #5f985f;
     background: #285c3e;
@@ -320,6 +361,20 @@ button.game-event {
     gap: 0.45rem;
 }
 
+.hint-action {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.hint-action[data-has-hint="True"] {
+    border-color: #e4c86e;
+    color: #fff1c2;
+    box-shadow: 0 0 0.9rem rgba(228, 200, 110, 0.24);
+    animation: phone-action-glow 900ms ease-in-out infinite alternate;
+}
+
 .action-icon-notes {
     width: 1rem;
     height: 1.15rem;
@@ -327,12 +382,88 @@ button.game-event {
     background: repeating-linear-gradient(180deg, transparent 0 0.2rem, #d5b758 0.21rem 0.24rem);
 }
 
+.action-icon-phone {
+    position: relative;
+    display: grid;
+    width: 1rem;
+    height: 1.45rem;
+    place-items: center;
+    border: 1px solid #d5b758;
+    border-radius: 0.22rem;
+    background:
+        linear-gradient(180deg, #24372b, #0b130f),
+        radial-gradient(circle at 50% 50%, #ecd47d, transparent 45%);
+    box-shadow: inset 0 0 0 1px #0009, 0 0 0.55rem rgba(213, 183, 88, 0.28);
+}
+
+.hint-action[data-has-hint="True"] .action-icon-phone {
+    animation: phone-vibrate 180ms linear infinite;
+}
+
+.phone-speaker,
+.phone-screen {
+    position: absolute;
+    display: block;
+}
+
+.phone-speaker {
+    top: 0.15rem;
+    width: 0.36rem;
+    height: 1px;
+    border-radius: 1rem;
+    background: #e8d27c;
+}
+
+.phone-screen {
+    top: 0.34rem;
+    right: 0.18rem;
+    bottom: 0.25rem;
+    left: 0.18rem;
+    border: 1px solid rgba(213, 183, 88, 0.42);
+    border-radius: 0.12rem;
+    background:
+        radial-gradient(circle at 70% 25%, rgba(224, 196, 104, 0.34), transparent 34%),
+        linear-gradient(180deg, rgba(19, 55, 39, 0.9), rgba(4, 8, 6, 0.92));
+}
+
+.phone-badge {
+    content: "";
+    position: absolute;
+    top: -0.35rem;
+    right: -0.35rem;
+    display: grid;
+    width: 1.15rem;
+    height: 1.15rem;
+    place-items: center;
+    border: 1px solid #ffe39a;
+    border-radius: 50%;
+    background: #a23a34;
+    color: #fff3d0;
+    font-size: 0.62rem;
+    font-weight: 900;
+    box-shadow: 0 0 0.7rem rgba(226, 75, 68, 0.45);
+}
+
+@keyframes phone-vibrate {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-1px, 0) rotate(-7deg); }
+    40% { transform: translate(1px, -1px) rotate(6deg); }
+    60% { transform: translate(-1px, 1px) rotate(-5deg); }
+    80% { transform: translate(1px, 0) rotate(5deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes phone-action-glow {
+    from { box-shadow: 0 0 0.45rem rgba(228, 200, 110, 0.16); }
+    to { box-shadow: 0 0 1.15rem rgba(228, 200, 110, 0.38); }
+}
+
 .game-notes-drawer {
     position: fixed;
     z-index: 42;
     top: 0;
     right: 0;
-    width: min(25rem, 92vw);
+    width: min(44rem, 96vw);
     height: 100vh;
     overflow-y: auto;
     border-left: 1px solid #c19b3c;

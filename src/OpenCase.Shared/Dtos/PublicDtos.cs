@@ -52,7 +52,7 @@ public record PublicRefutationDto(
     bool AllPlayersPassed,
     Guid? RefutedByPlayerId);
 
-public record PublicHintDto(Guid Id, string Type, string Text);
+public record PublicHintDto(Guid Id, string Type, string Delivery, string Text, Guid? TargetPlayerId);
 
 public record PublicGameStateDto(
     Guid GameId,

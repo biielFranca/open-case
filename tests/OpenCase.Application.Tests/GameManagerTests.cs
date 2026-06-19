@@ -46,7 +46,7 @@ public class GameManagerTests
         var game = _manager.StartGame(room);
 
         Assert.Equal(GameStatus.InProgress, game.Status);
-        Assert.Equal(28, game.AllCards.Count); // 8 suspeitos + 12 locais + 8 armas
+        Assert.Equal(36, game.AllCards.Count); // 12 suspeitos + 12 locais + 12 armas
         Assert.Equal(room.Players.Count, game.Hands.Count);
         Assert.Equal(room.Players.Count, game.PawnPositions.Count);
         Assert.Equal(room.Players.Count, game.PlayerSuspects.Count);

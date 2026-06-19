@@ -156,7 +156,7 @@ public class GameComponentsTests : BunitContext
     {
         var cards = new List<CardDto>
         {
-            new(Guid.NewGuid(), "Suspect", "Coronel Mostarda"),
+            new(Guid.NewGuid(), "Suspect", "Detetive Arthur Vale"),
             new(Guid.NewGuid(), "Weapon", "Castiçal"),
         };
 
@@ -164,8 +164,8 @@ public class GameComponentsTests : BunitContext
 
         Assert.Equal(2, cut.FindAll(".hand-card").Count);
         Assert.Equal(2, cut.FindAll(".hand-card-image").Count);
-        Assert.Contains("Coronel Mostarda", cut.Markup);
-        Assert.Contains("images/characters/raul-ferraz.jpg", cut.Markup);
+        Assert.Contains("Detetive Arthur Vale", cut.Markup);
+        Assert.Contains("images/characters/arthur-vale.jpg", cut.Markup);
         Assert.Contains("images/cards/weapons/candlestick.png", cut.Markup);
     }
 
@@ -217,7 +217,8 @@ public class GameComponentsTests : BunitContext
     [Fact]
     public void SuggestionModal_RequiresSuspectAndWeaponBeforeConfirm()
     {
-        var suspect = new CardDto(Guid.NewGuid(), "Suspect", "Coronel Mostarda");
+        var suspect = new CardDto(Guid.NewGuid(), "Suspect", "Detetive Arthur Vale");
+        var location = new CardDto(Guid.NewGuid(), "Location", "Biblioteca");
         var weapon = new CardDto(Guid.NewGuid(), "Weapon", "Castiçal");
         (Guid, Guid)? confirmed = null;
 
@@ -225,9 +226,14 @@ public class GameComponentsTests : BunitContext
             .Add(c => c.Suspects, [suspect])
             .Add(c => c.Weapons, [weapon])
             .Add(c => c.LocationName, "Biblioteca")
+            .Add(c => c.LocationCard, location)
             .Add(c => c.OnConfirm, ((Guid s, Guid w) pick) => confirmed = pick));
 
         Assert.True(cut.Find(".confirm-button").HasAttribute("disabled"));
+        Assert.Equal(3, cut.FindAll(".modal-card-art img").Count);
+        Assert.Contains("images/characters/arthur-vale.jpg", cut.Markup);
+        Assert.Contains("images/cards/locations/biblioteca.png", cut.Markup);
+        Assert.Contains("images/cards/weapons/candlestick.png", cut.Markup);
 
         cut.Find($"[data-card-id='{suspect.Id}']").Click();
         cut.Find($"[data-card-id='{weapon.Id}']").Click();
@@ -237,12 +243,149 @@ public class GameComponentsTests : BunitContext
     }
 
     [Fact]
+    public void RefutationModal_RendersCitedAndAvailableCardsWithArt()
+    {
+        var suspect = new CardDto(Guid.NewGuid(), "Suspect", "Detetive Arthur Vale");
+        var location = new CardDto(Guid.NewGuid(), "Location", "Biblioteca");
+        var weapon = new CardDto(Guid.NewGuid(), "Weapon", "CastiÃ§al");
+        Guid? shown = null;
+
+        var cut = Render<RefutationModal>(p => p
+            .Add(c => c.CitedCards, [suspect, location, weapon])
+            .Add(c => c.AvailableCards, [weapon])
+            .Add(c => c.OnShowCard, (Guid cardId) => shown = cardId));
+
+        Assert.Equal(4, cut.FindAll(".modal-card-art img").Count);
+        Assert.Contains("modal-card-art", cut.Markup);
+
+        cut.Find($"[data-card-id='{weapon.Id}']").Click();
+
+        Assert.Equal(weapon.Id, shown);
+    }
+
+    [Fact]
+    public void FinalAccusationModal_RendersAccusationAsCards()
+    {
+        var suspect = new CardDto(Guid.NewGuid(), "Suspect", "Detetive Arthur Vale");
+        var location = new CardDto(Guid.NewGuid(), "Location", "Biblioteca");
+        var weapon = new CardDto(Guid.NewGuid(), "Weapon", "CastiÃ§al");
+
+        var cut = Render<FinalAccusationModal>(p => p
+            .Add(c => c.SuspectCard, suspect)
+            .Add(c => c.LocationCard, location)
+            .Add(c => c.WeaponCard, weapon));
+
+        Assert.Equal(3, cut.FindAll(".accusation-card .modal-card-art img").Count);
+        Assert.Contains("Detetive Arthur Vale", cut.Markup);
+        Assert.Contains("Biblioteca", cut.Markup);
+        Assert.Contains("CastiÃ§al", cut.Markup);
+    }
+
+    [Fact]
+    public void CaseActionToast_RendersSuggestionAndRefutationAnimationContent()
+    {
+        var playerId = Guid.NewGuid();
+        var refuterId = Guid.NewGuid();
+        var suspect = new CardDto(Guid.NewGuid(), "Suspect", "Detetive Arthur Vale");
+        var location = new CardDto(Guid.NewGuid(), "Location", "Biblioteca");
+        var weapon = new CardDto(Guid.NewGuid(), "Weapon", "CastiÃ§al");
+        var suggestion = new SuggestionDto(Guid.NewGuid(), playerId, suspect.Id, location.Id, weapon.Id);
+        var refutation = new PublicRefutationDto(suggestion.Id, refuterId, false, false, null);
+
+        var cut = Render<CaseActionToast>(p => p
+            .Add(c => c.Suggestion, suggestion)
+            .Add(c => c.Refutation, refutation)
+            .Add(c => c.AllCards, [suspect, location, weapon])
+            .Add(c => c.PlayerNames, new Dictionary<Guid, string>
+            {
+                [playerId] = "Biel",
+                [refuterId] = "Watson",
+            }));
+
+        Assert.Contains("refutation", cut.Find(".case-action-toast").ClassList);
+        Assert.Contains("Watson precisa responder", cut.Markup);
+        Assert.Equal(3, cut.FindAll(".case-action-card img").Count);
+    }
+
+    [Fact]
+    public void CaseActionToast_HidesAfterAutoHideDelay()
+    {
+        var playerId = Guid.NewGuid();
+        var suspect = new CardDto(Guid.NewGuid(), "Suspect", "Detetive Arthur Vale");
+        var location = new CardDto(Guid.NewGuid(), "Location", "Biblioteca");
+        var weapon = new CardDto(Guid.NewGuid(), "Weapon", "Corda");
+        var suggestion = new SuggestionDto(Guid.NewGuid(), playerId, suspect.Id, location.Id, weapon.Id);
+
+        var cut = Render<CaseActionToast>(p => p
+            .Add(c => c.Suggestion, suggestion)
+            .Add(c => c.AllCards, [suspect, location, weapon])
+            .Add(c => c.PlayerNames, new Dictionary<Guid, string>
+            {
+                [playerId] = "Biel",
+            })
+            .Add(c => c.AutoHideAfter, TimeSpan.FromMilliseconds(20)));
+
+        Assert.Single(cut.FindAll(".case-action-toast"));
+
+        cut.WaitForAssertion(
+            () => Assert.Empty(cut.FindAll(".case-action-toast")),
+            TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void MysterySuggestionOverlay_RendersFullScreenAtmosphereForSuggestion()
+    {
+        var playerId = Guid.NewGuid();
+        var suspect = new CardDto(Guid.NewGuid(), "Suspect", "Detetive Arthur Vale");
+        var location = new CardDto(Guid.NewGuid(), "Location", "Biblioteca");
+        var weapon = new CardDto(Guid.NewGuid(), "Weapon", "Corda");
+        var suggestion = new SuggestionDto(
+            Guid.NewGuid(),
+            playerId,
+            suspect.Id,
+            location.Id,
+            weapon.Id);
+
+        var cut = Render<MysterySuggestionOverlay>(p => p
+            .Add(c => c.Suggestion, suggestion)
+            .Add(c => c.AllCards, [suspect, location, weapon])
+            .Add(c => c.PlayerNames, new Dictionary<Guid, string>
+            {
+                [playerId] = "Biel",
+            }));
+
+        Assert.Contains("mystery-suggestion-overlay", cut.Find("section").ClassList);
+        Assert.Contains("Biel mexeu nas cartas do caso", cut.Markup);
+        Assert.Equal(3, cut.FindAll(".mystery-card img").Count);
+        Assert.Contains("images/characters/arthur-vale.jpg", cut.Markup);
+        Assert.Contains("images/cards/locations/biblioteca.png", cut.Markup);
+        Assert.Contains("images/cards/weapons/rope.png", cut.Markup);
+        Assert.Equal(2, cut.FindAll(".mystery-fog").Count);
+    }
+
+    [Fact]
     public void HintPopup_ShowsTextAndType()
     {
         var cut = Render<HintPopup>(p => p
-            .Add(c => c.Hint, new PublicHintDto(Guid.NewGuid(), "Noise", "Passos no corredor...")));
+            .Add(c => c.Hint, new PublicHintDto(Guid.NewGuid(), "Noise", "Text", "Passos no corredor...", null)));
 
         Assert.Contains("Passos no corredor", cut.Markup);
         Assert.Contains("hint-noise", cut.Find(".hint-popup").ClassList);
+    }
+
+    [Fact]
+    public void HintPopup_RendersAudioControlsForAudioHint()
+    {
+        var playerId = Guid.NewGuid();
+        var cut = Render<HintPopup>(p => p
+            .Add(c => c.Hint, new PublicHintDto(
+                Guid.NewGuid(),
+                "Private",
+                "Audio",
+                "Uma voz sussurra uma pista pelo telefone.",
+                playerId)));
+
+        Assert.Contains("hint-delivery-audio", cut.Find(".hint-popup").ClassList);
+        Assert.Single(cut.FindAll(".hint-audio-button"));
     }
 }

@@ -1,9 +1,9 @@
-using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using OpenCase.Application.Mapping;
 using OpenCase.Application.Services;
 using OpenCase.Domain.Entities;
 using OpenCase.Shared.Dtos;
+using OpenCase.Web.Services;
 
 namespace OpenCase.Web.Hubs;
 
@@ -21,13 +21,10 @@ public class GameHub(
     RefutationService refutationService,
     FinalAccusationService finalAccusationService,
     SecretPassageService secretPassageService,
+    GameConnectionRegistry connectionRegistry,
+    HintScheduler hintScheduler,
     Services.BotManager botManager) : Hub
 {
-    private record ConnectionInfo(Guid RoomId, Guid PlayerId);
-
-    private static readonly ConcurrentDictionary<string, ConnectionInfo> Connections = new();
-    private static readonly ConcurrentDictionary<Guid, string> ConnectionsByPlayer = new();
-
     // ─── Lobby ───
 
     public async Task CreateRoom(string hostName)
@@ -59,9 +56,14 @@ public class GameHub(
         }
 
         roomService.LeaveRoom(info.RoomId, info.PlayerId);
-        Connections.TryRemove(Context.ConnectionId, out _);
-        ConnectionsByPlayer.TryRemove(info.PlayerId, out _);
+        connectionRegistry.Remove(Context.ConnectionId, out _);
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(info.RoomId));
+        if (connectionRegistry.ConnectedPlayerIdsForRoom(info.RoomId).Count == 0)
+        {
+            hintScheduler.Stop(info.RoomId);
+            return;
+        }
+
         await BroadcastRoom(info.RoomId);
     }
 
@@ -104,6 +106,8 @@ public class GameHub(
             {
                 await SendToPlayer(hand.PlayerId, "PrivateHand", GameStateMapper.ToPrivateHand(game, hand.PlayerId));
             }
+
+            hintScheduler.Start(room.Id);
         });
     }
 
@@ -281,6 +285,8 @@ public class GameHub(
 
             if (result.IsCorrect)
             {
+                hintScheduler.Stop(info.RoomId);
+
                 // Só agora a solução pode ser revelada.
                 await Clients.Group(GroupName(info.RoomId)).SendAsync("GameFinished", new
                 {
@@ -329,15 +335,14 @@ public class GameHub(
 
     private async Task RegisterConnection(Guid roomId, Guid playerId)
     {
-        Connections[Context.ConnectionId] = new ConnectionInfo(roomId, playerId);
-        ConnectionsByPlayer[playerId] = Context.ConnectionId;
+        connectionRegistry.Register(Context.ConnectionId, roomId, playerId);
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(roomId));
     }
 
-    private bool TryGetConnection(out ConnectionInfo info) =>
-        Connections.TryGetValue(Context.ConnectionId, out info!);
+    private bool TryGetConnection(out GameConnectionRegistry.ConnectionInfo info) =>
+        connectionRegistry.TryGetConnection(Context.ConnectionId, out info);
 
-    private async Task WithRoom(Func<ConnectionInfo, Task> action)
+    private async Task WithRoom(Func<GameConnectionRegistry.ConnectionInfo, Task> action)
     {
         if (!TryGetConnection(out var info))
         {
@@ -376,7 +381,7 @@ public class GameHub(
 
     private async Task SendToPlayer(Guid playerId, string eventName, object payload)
     {
-        if (ConnectionsByPlayer.TryGetValue(playerId, out var connectionId))
+        if (connectionRegistry.TryGetConnectionId(playerId, out var connectionId))
         {
             await Clients.Client(connectionId).SendAsync(eventName, payload);
         }

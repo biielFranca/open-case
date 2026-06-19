@@ -1,11 +1,23 @@
 @using OpenCase.Shared.Dtos
+@inject IJSRuntime JS
 
 @if (Hint is not null)
 {
-    <div class="hint-popup hint-@Hint.Type.ToLowerInvariant()">
-        <span class="hint-type">@TranslateType(Hint.Type)</span>
+    <div class="hint-popup hint-@Hint.Type.ToLowerInvariant() hint-delivery-@Hint.Delivery.ToLowerInvariant()">
+        <span class="hint-type">@TranslateType(Hint.Type) - @TranslateDelivery(Hint.Delivery)</span>
+        @if (Hint.Delivery == "Audio")
+        {
+            <button type="button" class="hint-audio-button" @onclick="PlayAudioAsync">
+                <span class="hint-audio-bars" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+                Ouvir mensagem
+            </button>
+        }
         <p class="hint-text">@Hint.Text</p>
-        <button type="button" class="hint-close" @onclick="() => OnClose.InvokeAsync()">×</button>
+        <button type="button" class="hint-close" @onclick="() => OnClose.InvokeAsync()">x</button>
     </div>
 }
 
@@ -16,8 +28,25 @@
     private static string TranslateType(string type) => type switch
     {
         "Private" => "Dica privada",
-        "Public" => "Dica pública",
+        "Public" => "Dica publica",
         "Noise" => "Rumor",
         _ => type,
     };
+
+    private static string TranslateDelivery(string delivery) => delivery switch
+    {
+        "Audio" => "Audio",
+        "Text" => "Texto",
+        _ => delivery,
+    };
+
+    private async Task PlayAudioAsync()
+    {
+        if (Hint is null)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("openCaseHints.speak", Hint.Text);
+    }
 }
