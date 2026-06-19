@@ -252,8 +252,10 @@
 }
 
 .board-room-character {
-    width: clamp(2.05rem, 27%, 3.25rem);
-    height: clamp(4.1rem, 58%, 6.2rem);
+    /* Mesmo tamanho dos peões de corredor (relativo à célula, não à sala),
+       para que todos os peões fiquem padronizados independente do local. */
+    width: calc(var(--board-cell-size) * 1.4);
+    height: calc(var(--board-cell-size) * 2.85);
     right: auto;
     bottom: auto;
     transform: translateZ(0.3rem);
