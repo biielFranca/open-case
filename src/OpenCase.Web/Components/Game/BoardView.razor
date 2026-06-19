@@ -5,9 +5,35 @@
     {
         @foreach (var location in Board.Locations)
         {
-            <div class="board-room-layer @(location.HasSecretPassage ? "has-secret-passage" : "")"
-                 style="@GetRoomStyle(location)">
+            var reachableEntrance = _reachableLocations.GetValueOrDefault(location.Id);
+            var isReachable = reachableEntrance is not null;
+            var isSelected = SelectedPath.Any(position => LocationIdAt(position) == location.Id);
+            var roomPawns = PawnsInLocation(location.Id).ToList();
+            <div class="board-room-layer @(location.HasSecretPassage ? "has-secret-passage" : "") @(isReachable ? "reachable clickable" : "") @(isSelected ? "selected" : "")"
+                 data-location-id="@location.Id"
+                 style="@GetRoomStyle(location)"
+                 title="@location.Name"
+                 @onclick="() => HandleRoomClick(reachableEntrance)">
                 <span class="board-room-name">@location.Name</span>
+                @for (var pawnIndex = 0; pawnIndex < roomPawns.Count; pawnIndex++)
+                {
+                    var pawn = roomPawns[pawnIndex];
+                    <span class="board-character character-3d board-room-character @GetPawnModelVariant(pawn.Key)"
+                          style="@GetRoomPawnStyle(pawn.Key, pawnIndex)"
+                          title="@GetPawnName(pawn.Key)"
+                          aria-label="@GetPawnName(pawn.Key)">
+                        <span class="character-shadow"></span>
+                        <span class="character-figure">
+                            <span class="character-portrait"></span>
+                            <span class="character-frame"></span>
+                        </span>
+                        <span class="character-base"></span>
+                    </span>
+                }
+                @if (location.HasSecretPassage)
+                {
+                    <span class="board-room-passage" aria-hidden="true"></span>
+                }
             </div>
         }
 
@@ -18,15 +44,27 @@
             {
                 var col = x;
                 var cell = _cellLookup[(col, row)];
-                var isSelected = SelectedPath.Any(p => p.X == col && p.Y == row);
-                <div class="board-cell cell-@cell.Type.ToLowerInvariant() @GetCellVisualClass(cell) @(isSelected ? "selected" : "")"
+                var isSelected = cell.LocationId is null && SelectedPath.Any(p => p.X == col && p.Y == row);
+                var isReachable = _reachableLookup.Contains((col, row)) && cell.LocationId is null;
+                <div class="board-cell cell-@cell.Type.ToLowerInvariant() @GetCellVisualClass(cell) @(isSelected ? "selected" : "") @(isReachable ? "reachable clickable" : "")"
                      data-cell="@($"{col}-{row}")"
                      style="@($"grid-column:{col + 1};grid-row:{row + 1}")"
                      title="@GetCellTitle(cell)"
-                     @onclick="() => HandleClick(cell)">
-                    @foreach (var pawn in PawnPositions.Where(p => p.Value.X == col && p.Value.Y == row))
+                     @onclick="() => HandleClick(cell, isReachable)">
+                    @foreach (var pawn in PawnPositions.Where(p =>
+                        p.Value.X == col && p.Value.Y == row && LocationIdAt(p.Value) is null))
                     {
-                        <span class="board-pawn" style="background:@PawnColors.GetValueOrDefault(pawn.Key, "#888")"></span>
+                        <span class="board-character character-3d @GetPawnModelVariant(pawn.Key)"
+                              style="@GetPawnColorStyle(pawn.Key)"
+                              title="@GetPawnName(pawn.Key)"
+                              aria-label="@GetPawnName(pawn.Key)">
+                            <span class="character-shadow"></span>
+                            <span class="character-figure">
+                                <span class="character-portrait"></span>
+                                <span class="character-frame"></span>
+                            </span>
+                            <span class="character-base"></span>
+                        </span>
                     }
                 </div>
             }
@@ -38,10 +76,14 @@
     [Parameter] public BoardDto? Board { get; set; }
     [Parameter] public Dictionary<Guid, PositionDto> PawnPositions { get; set; } = [];
     [Parameter] public Dictionary<Guid, string> PawnColors { get; set; } = [];
+    [Parameter] public Dictionary<Guid, PawnDto> PawnCharacters { get; set; } = [];
     [Parameter] public List<PositionDto> SelectedPath { get; set; } = [];
+    [Parameter] public IEnumerable<PositionDto> ReachableDestinations { get; set; } = [];
     [Parameter] public EventCallback<PositionDto> OnCellClick { get; set; }
 
     private Dictionary<(int X, int Y), BoardCellDto> _cellLookup = [];
+    private HashSet<(int X, int Y)> _reachableLookup = [];
+    private Dictionary<Guid, PositionDto> _reachableLocations = [];
     private Dictionary<Guid, LocationBounds> _locationBounds = [];
     private Dictionary<Guid, string> _locationNames = [];
 
@@ -61,8 +103,26 @@
         ["Quarto de Hóspedes"] = "quarto-de-hospedes",
     };
 
+    private static readonly Dictionary<Guid, string> PawnVariants = new()
+    {
+        [Guid.Parse("00000000-0000-0000-0000-000000000001")] = "pawn-arthur",
+        [Guid.Parse("00000000-0000-0000-0000-000000000002")] = "pawn-helena",
+        [Guid.Parse("00000000-0000-0000-0000-000000000003")] = "pawn-otavio",
+        [Guid.Parse("00000000-0000-0000-0000-000000000004")] = "pawn-cecilia",
+        [Guid.Parse("00000000-0000-0000-0000-000000000005")] = "pawn-raul",
+        [Guid.Parse("00000000-0000-0000-0000-000000000006")] = "pawn-amelia",
+        [Guid.Parse("00000000-0000-0000-0000-000000000007")] = "pawn-clara",
+        [Guid.Parse("00000000-0000-0000-0000-000000000008")] = "pawn-afonso",
+        [Guid.Parse("00000000-0000-0000-0000-000000000009")] = "pawn-sebastiao",
+        [Guid.Parse("00000000-0000-0000-0000-000000000010")] = "pawn-iris",
+        [Guid.Parse("00000000-0000-0000-0000-000000000011")] = "pawn-vicente",
+        [Guid.Parse("00000000-0000-0000-0000-000000000012")] = "pawn-elisa",
+    };
+
     protected override void OnParametersSet()
     {
+        _reachableLookup = ReachableDestinations.Select(position => (position.X, position.Y)).ToHashSet();
+
         if (Board is not { } board)
         {
             _cellLookup = [];
@@ -73,6 +133,11 @@
 
         _cellLookup = board.Cells.ToDictionary(c => (c.X, c.Y));
         _locationNames = board.Locations.ToDictionary(l => l.Id, l => l.Name);
+        _reachableLocations = ReachableDestinations
+            .Select(position => (Position: position, LocationId: LocationIdAt(position)))
+            .Where(item => item.LocationId is not null)
+            .GroupBy(item => item.LocationId!.Value)
+            .ToDictionary(group => group.Key, group => group.First().Position);
         _locationBounds = board.Locations.ToDictionary(
             location => location.Id,
             location =>
@@ -139,8 +204,74 @@
     private bool IsPath(int x, int y) =>
         _cellLookup.TryGetValue((x, y), out var cell) && cell.Type == "Path";
 
-    private Task HandleClick(BoardCellDto cell) =>
-        cell.Type == "Wall" ? Task.CompletedTask : OnCellClick.InvokeAsync(new PositionDto(cell.X, cell.Y));
+    private Guid? LocationIdAt(PositionDto position) =>
+        _cellLookup.GetValueOrDefault((position.X, position.Y))?.LocationId;
+
+    private IEnumerable<KeyValuePair<Guid, PositionDto>> PawnsInLocation(Guid locationId) =>
+        PawnPositions.Where(pawn => LocationIdAt(pawn.Value) == locationId);
+
+    private string GetRoomPawnStyle(Guid playerId, int index)
+    {
+        var positions = new (int Left, int Top)[]
+        {
+            (18, 20), (42, 18), (66, 20), (28, 48), (54, 48), (40, 68), (70, 62), (14, 64),
+        };
+        var position = positions[index % positions.Length];
+        return $"left:{position.Left}%;top:{position.Top}%;{GetPawnColorStyle(playerId)}";
+    }
+
+    private string GetPawnColorStyle(Guid playerId) =>
+        $"--pawn-color:{PawnColors.GetValueOrDefault(playerId, "#888")};--pawn-accent:{GetPawnAccent(playerId)};--character-image:url('{GetCharacterImage(playerId)}')";
+
+    private string GetCharacterImage(Guid playerId) =>
+        GetPawnModelVariant(playerId) switch
+        {
+            "pawn-arthur" => "/images/characters/arthur-vale.jpg",
+            "pawn-helena" => "/images/characters/helena-vesper.jpg",
+            "pawn-otavio" => "/images/characters/otavio-lacerda.jpg",
+            "pawn-cecilia" => "/images/characters/cecilia-marinho.jpg",
+            "pawn-raul" => "/images/characters/raul-ferraz.jpg",
+            "pawn-amelia" => "/images/characters/amelia-bellini.jpg",
+            "pawn-clara" => "/images/characters/clara-vidal.jpg",
+            "pawn-afonso" => "/images/characters/afonso-brandao.jpg",
+            "pawn-sebastiao" => "/images/characters/sebastiao-leme.jpg",
+            "pawn-iris" => "/images/characters/iris-montenegro.jpg",
+            "pawn-vicente" => "/images/characters/vicente-dourado.jpg",
+            "pawn-elisa" => "/images/characters/elisa-campos.jpg",
+            _ => "/images/login-detective.jpg",
+        };
+
+    private string GetPawnAccent(Guid playerId) =>
+        GetPawnModelVariant(playerId) switch
+        {
+            "pawn-arthur" => "#b9e2dd",
+            "pawn-helena" => "#e6b3c2",
+            "pawn-otavio" => "#d8c7f3",
+            "pawn-cecilia" => "#e7f3a6",
+            "pawn-raul" => "#b8d2e8",
+            "pawn-amelia" => "#f0b7d6",
+            "pawn-clara" => "#f4c18e",
+            "pawn-afonso" => "#fff0c7",
+            "pawn-sebastiao" => "#d0b69d",
+            "pawn-iris" => "#a9c1ff",
+            "pawn-vicente" => "#b6d7aa",
+            "pawn-elisa" => "#efbd94",
+            _ => "#e5e5e5",
+        };
+
+    private string GetPawnName(Guid playerId) =>
+        PawnCharacters.GetValueOrDefault(playerId)?.Name ?? "Personagem";
+
+    private string GetPawnModelVariant(Guid playerId) =>
+        PawnCharacters.TryGetValue(playerId, out var pawn)
+            ? PawnVariants.GetValueOrDefault(pawn.Id, "pawn-generic")
+            : "pawn-generic";
+
+    private Task HandleRoomClick(PositionDto? reachableEntrance) =>
+        reachableEntrance is null ? Task.CompletedTask : OnCellClick.InvokeAsync(reachableEntrance);
+
+    private Task HandleClick(BoardCellDto cell, bool isReachable) =>
+        isReachable ? OnCellClick.InvokeAsync(new PositionDto(cell.X, cell.Y)) : Task.CompletedTask;
 
     private sealed record LocationBounds(int X, int Y, int Width, int Height);
 }

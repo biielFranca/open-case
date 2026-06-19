@@ -1,9 +1,13 @@
 @using OpenCase.Shared.Dtos
 
 <div class="notes-grid">
-    @RenderSection("Suspeitos", Suspects)
-    @RenderSection("Locais", Locations)
-    @RenderSection("Armas", Weapons)
+    <nav class="notes-categories" aria-label="Categorias do bloco de notas">
+        @RenderCategoryButton("suspects", "Suspeitos", Suspects)
+        @RenderCategoryButton("locations", "Locais", Locations)
+        @RenderCategoryButton("weapons", "Armas", Weapons)
+    </nav>
+
+    @RenderSection(ActiveCategoryLabel, ActiveCards)
 </div>
 
 @code {
@@ -13,12 +17,47 @@
     [Parameter] public Dictionary<Guid, bool> Marked { get; set; } = [];
     [Parameter] public EventCallback<Guid> OnToggle { get; set; }
 
+    private string _activeCategory = "suspects";
+
+    private string ActiveCategoryLabel => _activeCategory switch
+    {
+        "locations" => "Locais",
+        "weapons" => "Armas",
+        _ => "Suspeitos",
+    };
+
+    private List<CardDto> ActiveCards => _activeCategory switch
+    {
+        "locations" => Locations,
+        "weapons" => Weapons,
+        _ => Suspects,
+    };
+
     private bool IsMarked(Guid cardId) => Marked.GetValueOrDefault(cardId);
+
+    private int MarkedCount(IEnumerable<CardDto> cards) =>
+        cards.Count(card => IsMarked(card.Id));
+
+    private RenderFragment RenderCategoryButton(string category, string label, List<CardDto> cards) => __builder =>
+    {
+        var isActive = _activeCategory == category;
+        <button type="button"
+                class="notes-category @(isActive ? "active" : "")"
+                aria-pressed="@isActive"
+                data-notes-category="@category"
+                @onclick="() => _activeCategory = category">
+            <span class="notes-category-label">@label</span>
+            <span class="notes-category-count">@MarkedCount(cards)/@cards.Count</span>
+        </button>
+    };
 
     private RenderFragment RenderSection(string title, List<CardDto> cards) => __builder =>
     {
-        <section class="notes-section">
-            <h4 class="notes-section-title">@title</h4>
+        <section class="notes-section" data-active-category="@_activeCategory">
+            <div class="notes-section-heading">
+                <h4 class="notes-section-title">@title</h4>
+                <span>@MarkedCount(cards) marcados de @cards.Count</span>
+            </div>
             @foreach (var card in cards)
             {
                 <button type="button"

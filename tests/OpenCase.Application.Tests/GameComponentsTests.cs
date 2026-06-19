@@ -1,4 +1,5 @@
 using Bunit;
+using OpenCase.Application.Services;
 using OpenCase.Shared.Dtos;
 using OpenCase.Web.Components.Game;
 
@@ -27,14 +28,62 @@ public class GameComponentsTests : BunitContext
         var cut = Render<BoardView>(p => p
             .Add(c => c.Board, CreateSmallBoard())
             .Add(c => c.PawnPositions, new Dictionary<Guid, PositionDto> { [playerId] = new(0, 0) })
-            .Add(c => c.PawnColors, new Dictionary<Guid, string> { [playerId] = "#c9a227" }));
+            .Add(c => c.PawnColors, new Dictionary<Guid, string> { [playerId] = "#c9a227" })
+            .Add(c => c.PawnCharacters, new Dictionary<Guid, PawnDto>
+            {
+                [playerId] = new(RoomService.AvailablePawns[0].Id, "Detetive Arthur Vale", "#c9a227"),
+            }));
 
         Assert.Equal(4, cut.FindAll(".board-cell").Count);
-        Assert.Single(cut.FindAll(".board-pawn"));
+        Assert.Single(cut.FindAll(".board-character"));
+        Assert.Contains("character-3d", cut.Find(".board-character").ClassList);
+        Assert.Contains("pawn-arthur", cut.Find(".board-character").ClassList);
+        Assert.Single(cut.FindAll(".board-character > .character-shadow"));
+        Assert.Single(cut.FindAll(".board-character > .character-figure"));
+        Assert.Single(cut.FindAll(".board-character > .character-base"));
+        Assert.Single(cut.FindAll(".character-figure > .character-portrait"));
+    }
+
+    [Fact]
+    public void BoardView_RendersDistinctThreeDimensionalPawnForEveryCharacter()
+    {
+        var players = RoomService.AvailablePawns.Select(_ => Guid.NewGuid()).ToList();
+        var positions = players.ToDictionary(playerId => playerId, _ => new PositionDto(0, 0));
+        var colors = players.Zip(RoomService.AvailablePawns)
+            .ToDictionary(pair => pair.First, pair => pair.Second.Color);
+        var characters = players.Zip(RoomService.AvailablePawns)
+            .ToDictionary(pair => pair.First, pair =>
+                new PawnDto(pair.Second.Id, pair.Second.Name, pair.Second.Color));
+
+        var cut = Render<BoardView>(parameters => parameters
+            .Add(component => component.Board, CreateSmallBoard())
+            .Add(component => component.PawnPositions, positions)
+            .Add(component => component.PawnColors, colors)
+            .Add(component => component.PawnCharacters, characters));
+
+        Assert.Equal(12, cut.FindAll(".character-3d").Count);
+        Assert.Equal(12, cut.FindAll(".character-3d").Select(pawn =>
+            pawn.ClassList.Single(className => className.StartsWith("pawn-"))).Distinct().Count());
     }
 
     [Fact]
     public void BoardView_ClickingWalkableCellRaisesCallback()
+    {
+        PositionDto? clicked = null;
+        var reachable = new PositionDto(0, 0);
+        var cut = Render<BoardView>(p => p
+            .Add(c => c.Board, CreateSmallBoard())
+            .Add(c => c.ReachableDestinations, [reachable])
+            .Add(c => c.OnCellClick, (PositionDto pos) => clicked = pos));
+
+        cut.Find("[data-cell='0-0']").Click();
+
+        Assert.Equal(reachable, clicked);
+        Assert.Contains("reachable", cut.Find("[data-cell='0-0']").ClassList);
+    }
+
+    [Fact]
+    public void BoardView_ClickingUnavailableCellDoesNotRaiseCallback()
     {
         PositionDto? clicked = null;
         var cut = Render<BoardView>(p => p
@@ -43,7 +92,63 @@ public class GameComponentsTests : BunitContext
 
         cut.Find("[data-cell='0-0']").Click();
 
-        Assert.Equal(new PositionDto(0, 0), clicked);
+        Assert.Null(clicked);
+        Assert.DoesNotContain("clickable", cut.Find("[data-cell='0-0']").ClassList);
+    }
+
+    [Fact]
+    public void BoardView_RendersLocationAsOneReachableSpace()
+    {
+        PositionDto? clicked = null;
+        var board = CreateSmallBoard();
+        var entrance = board.Locations[0].Entrances[0];
+        var playerId = Guid.NewGuid();
+        var cut = Render<BoardView>(p => p
+            .Add(c => c.Board, board)
+            .Add(c => c.ReachableDestinations, [entrance])
+            .Add(c => c.PawnPositions, new Dictionary<Guid, PositionDto> { [playerId] = entrance })
+            .Add(c => c.OnCellClick, (PositionDto position) => clicked = position));
+
+        var room = cut.Find(".board-room-layer");
+        room.Click();
+
+        Assert.Contains("reachable", room.ClassList);
+        Assert.Single(room.QuerySelectorAll(".board-room-character"));
+        Assert.Empty(cut.Find("[data-cell='1-0']").QuerySelectorAll(".board-character"));
+        Assert.DoesNotContain("reachable", cut.Find("[data-cell='1-0']").ClassList);
+        Assert.Equal(entrance, clicked);
+    }
+
+    [Fact]
+    public void BoardMovementPaths_ReturnsEarlyEntrances()
+    {
+        var board = CreateSmallBoard();
+
+        var paths = BoardMovementPaths.FindLegalPaths(board, new PositionDto(0, 0), 2);
+
+        Assert.True(paths.TryGetValue(new PositionDto(1, 0), out var entrancePath));
+        Assert.Single(entrancePath);
+        Assert.False(paths.ContainsKey(new PositionDto(0, 0)));
+    }
+
+    [Fact]
+    public void BoardMovementPaths_ReturnsOnlyPathCellsReachedWithExactDiceValue()
+    {
+        var locationId = Guid.NewGuid();
+        var board = new BoardDto(4, 1,
+            [
+                new BoardCellDto(0, 0, "Path", null),
+                new BoardCellDto(1, 0, "Path", null),
+                new BoardCellDto(2, 0, "Path", null),
+                new BoardCellDto(3, 0, "Entrance", locationId),
+            ],
+            [new BoardLocationDto(locationId, "Biblioteca", [new PositionDto(3, 0)], false)]);
+
+        var paths = BoardMovementPaths.FindLegalPaths(board, new PositionDto(0, 0), 2);
+
+        Assert.Equal(2, paths[new PositionDto(2, 0)].Count);
+        Assert.False(paths.ContainsKey(new PositionDto(1, 0)));
+        Assert.False(paths.ContainsKey(new PositionDto(3, 0)));
     }
 
     [Fact]

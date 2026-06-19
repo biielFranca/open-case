@@ -52,10 +52,29 @@ public class GameManagerTests
         Assert.Equal(room.Players.Count, game.PlayerSuspects.Count);
         Assert.NotNull(game.Solution);
 
-        // Todos os peões começam em células caminháveis.
+        // Cada personagem começa dentro de seu cômodo temático.
         var boardService = new BoardService();
-        Assert.All(game.PawnPositions.Values, p =>
-            Assert.True(boardService.IsWalkable(game.Board, p.X, p.Y)));
+        foreach (var player in room.Players)
+        {
+            var position = game.PawnPositions[player.Id];
+            var location = boardService.GetLocationByCell(game.Board, position.X, position.Y);
+
+            Assert.NotNull(location);
+            Assert.Equal(GameManager.StartingLocationByPawnId[player.PawnId!.Value], location!.Name);
+        }
+    }
+
+    [Fact]
+    public void CharacterStartingLocations_CoverAllCharactersAndRoomsWithoutRepeating()
+    {
+        var board = new BoardService().CreateDefaultBoard();
+
+        Assert.Equal(RoomService.AvailablePawns.Count, GameManager.StartingLocationByPawnId.Count);
+        Assert.Equal(board.Locations.Count, GameManager.StartingLocationByPawnId.Values.Distinct().Count());
+        Assert.All(RoomService.AvailablePawns, pawn =>
+            Assert.True(GameManager.StartingLocationByPawnId.ContainsKey(pawn.Id)));
+        Assert.All(GameManager.StartingLocationByPawnId.Values, locationName =>
+            Assert.Contains(board.Locations, location => location.Name == locationName));
     }
 
     [Fact]
